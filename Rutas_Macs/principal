@@ -1,0 +1,167 @@
+"""
+================================================================================
+ INTERFAZ PRINCIPAL - MACS COL
+================================================================================
+Recreación en Python de la ventana "Principal" (Vehiculo, Destino, Pedido,
+Cliente, Producto, Conductor) usando la librería estándar Tkinter.
+
+------------------------------------------------------------------------------
+ NOTA SOBRE LA TIPOGRAFÍA (el "tipo de letra")
+------------------------------------------------------------------------------
+En Tkinter, la fuente se define con una tupla:  (familia, tamaño, estilo)
+
+    font=("Arial", 18, "bold")
+           |         |     |
+           |         |     +--> estilo: "bold" = negrita, "italic" = cursiva
+           |         +--------> tamaño en puntos
+           +------------------> familia tipográfica
+
+Para los botones (Vehiculo, Cliente, etc.) se usó una fuente:
+  - "Arial" o "Segoe UI"  -> son fuentes tipo "sans-serif" (palo seco),
+    de trazo grueso y uniforme, muy legibles en pantalla y disponibles
+    por defecto en Windows. Se usan en "bold" (negrita) para que el
+    texto blanco resalte sobre el fondo azul oscuro, igual que en la
+    imagen original.
+  - Se eligió tamaño grande (16-20 pts) porque son botones de navegación
+    principal: deben leerse a distancia y con un solo vistazo.
+
+Si Tkinter no encuentra la fuente indicada (por ejemplo en Linux/Mac donde
+"Segoe UI" no existe), automáticamente usa una fuente equivalente del
+sistema, por eso es seguro usar estos nombres en cualquier sistema operativo.
+
+Puedes cambiar la fuente cambiando la constante FUENTE_BOTON más abajo.
+================================================================================
+"""
+
+import tkinter as tk
+from tkinter import messagebox
+import os
+
+# ------------------------------------------------------------------
+# CONFIGURACIÓN DE COLORES Y FUENTES (fácil de modificar)
+# ------------------------------------------------------------------
+COLOR_FONDO = "#DFFFF7"        # verde/menta muy claro, igual al de la imagen
+COLOR_BOTON = "#0B1F6B"        # azul marino oscuro de los botones
+COLOR_TEXTO_BOTON = "white"    # texto blanco dentro de los botones
+
+# "Segoe UI" es la fuente nativa de Windows (moderna, palo seco).
+# Si no existe en el sistema, Tkinter cae automáticamente a una fuente similar.
+FUENTE_BOTON = ("Segoe UI", 13, "bold")
+FUENTE_MENU = ("Segoe UI", 10)
+
+
+FUENTE_TITULO_VENTANA = ("Segoe UI", 10, "bold" , "underline" , "italic" , "overstrike")
+
+RUTA_LOGO = os.path.join(os.path.dirname(__file__), "logo_macscol.png")
+
+
+class InterfazPrincipal(tk.Tk):
+    def __init__(self):
+        super().__init__()
+
+        # ---------------- Ventana principal ----------------
+        self.title("Principal") # título de la ventana
+        self.geometry("820x350")  # tamaño inicial de la ventana (x, y)
+        self.configure(bg=COLOR_FONDO) # color de fondo de la ventana
+        self.minsize(820, 350)# tamaño mínimo de la ventana
+
+        self._crear_menu()
+        self._crear_botones()
+        self._crear_logo_central()
+
+    # ------------------------------------------------------------------
+    # MENÚ SUPERIOR: Archivo / Ayuda / Salir
+    # ------------------------------------------------------------------
+    def _crear_menu(self):
+        menubar = tk.Menu(self, font=FUENTE_MENU)
+
+        menu_archivo = tk.Menu(menubar, tearoff=0)
+        menu_archivo.add_command(label="Nuevo")
+        menu_archivo.add_command(label="Abrir")
+        menu_archivo.add_separator()
+        menu_archivo.add_command(label="Salir", command=self._salir)
+        menubar.add_cascade(label="Archivo", menu=menu_archivo)
+
+        menu_ayuda = tk.Menu(menubar, tearoff=0)
+        menu_ayuda.add_command(label="Acerca de", command=self._acerca_de)
+        menubar.add_cascade(label="Ayuda", menu=menu_ayuda)
+
+        # "Salir" también aparece como opción directa en la barra, igual
+        # que en la imagen original.
+        menubar.add_command(label="Salir", command=self._salir)
+
+        self.config(menu=menubar)
+
+    # ------------------------------------------------------------------
+    # BOTONES DE NAVEGACIÓN (3 a la izquierda, 3 a la derecha)
+    # ------------------------------------------------------------------
+    def _crear_botones(self):
+        botones_izquierda = ["Vehiculo", "Destino", "Pedido"]
+        botones_derecha = ["Cliente", "Producto", "Conductor"]
+
+        # Columna izquierda
+        frame_izq = tk.Frame(self, bg=COLOR_FONDO)
+        frame_izq.place(relx=0.03, rely=0.5, anchor="w")
+        for i, nombre in enumerate(botones_izquierda):
+            self._crear_boton(frame_izq, nombre).grid(row=i, column=0, pady=15, sticky="w")
+
+        # Columna derecha
+        frame_der = tk.Frame(self, bg=COLOR_FONDO)
+        frame_der.place(relx=0.97, rely=0.5, anchor="e")
+        for i, nombre in enumerate(botones_derecha):
+            self._crear_boton(frame_der, nombre).grid(row=i, column=0, pady=15, sticky="e")
+
+    def _crear_boton(self, parent, texto):
+        return tk.Button(
+            parent,
+            text=texto,
+            font=FUENTE_BOTON,           # <-- aquí se aplica el tipo de letra
+            fg=COLOR_TEXTO_BOTON,
+            bg=COLOR_BOTON,
+            activebackground="#15308F",
+            activeforeground="white",
+            relief="flat",
+            width=12,
+            height=1,
+            cursor="hand2",
+            command=lambda: self._abrir_modulo(texto),
+        )
+
+    # ------------------------------------------------------------------
+    # LOGO CENTRAL (MACS COL - 10 años)
+    # ------------------------------------------------------------------
+    def _crear_logo_central(self):
+        if os.path.exists(RUTA_LOGO):
+            self.logo_img = tk.PhotoImage(file=RUTA_LOGO)
+            tk.Label(self, image=self.logo_img, bg=COLOR_FONDO).place(
+                relx=0.5, rely=0.45, anchor="center"
+            )
+        else:
+            # Si no se encuentra el archivo del logo, se muestra texto
+            # como respaldo para que la interfaz no falle.
+            tk.Label(
+                self,
+                text="MACS COL",
+                font=("Segoe UI", 32, "bold"),
+                fg="#0B1F6B",
+                bg=COLOR_FONDO,
+            ).place(relx=0.5, rely=0.45, anchor="center")
+
+    # ------------------------------------------------------------------
+    # ACCIONES
+    # ------------------------------------------------------------------
+    def _abrir_modulo(self, nombre):
+        messagebox.showinfo("Módulo", f"Aquí se abriría el módulo: {nombre}")
+
+    def _acerca_de(self):
+        messagebox.showinfo("Acerca de", "Sistema MACS COL\nInterfaz Principal - 10 años")
+
+    def _salir(self):
+        if messagebox.askyesno("Salir", "¿Desea salir del programa?"):
+            self.destroy()
+
+
+if __name__ == "__main__":
+    app = InterfazPrincipal()
+    app.mainloop() 
+
