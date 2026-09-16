@@ -61,7 +61,7 @@ class VentanaDestino(tk.Toplevel):
         self.tabla.grid(row=0, column=0)
 
         botones = tk.Frame(self, bg=COLOR_FONDO)
-        botones.pack(pady=25)
+        botones.pack(pady=25)                                       
 
         tk.Button(
             botones,
@@ -281,7 +281,7 @@ class VentanaDestino(tk.Toplevel):
         )
 
 
-if __name__ == "__main__":
+if __name__ == "_ _main__":
     root = tk.Tk()
     root.withdraw()
 
