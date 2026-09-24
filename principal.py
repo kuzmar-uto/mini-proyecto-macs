@@ -69,9 +69,12 @@ class InterfazPrincipal(tk.Tk):
 
         # ---------------- Ventana principal ----------------
         self.title("Principal — MACS COL")
-        self.geometry("1150x700")
+        # Inicia dentro del área visible incluso en pantallas pequeñas.
+        ancho = min(1150, max(640, self.winfo_screenwidth() - 80))
+        alto = min(700, max(450, self.winfo_screenheight() - 100))
+        self.geometry(f"{ancho}x{alto}")
         self.configure(bg=CHROME)
-        self.minsize(980, 600)
+        self.minsize(640, 450)
 
         self.items_nav = {}   # clave del módulo -> widgets de su fila en el nav
         self.item_activo = "Inicio"
@@ -86,6 +89,7 @@ class InterfazPrincipal(tk.Tk):
         self._crear_area_principal(cuerpo)
 
         self._crear_statusbar()
+        self.bind("<Configure>", self._adaptar_distribucion)
 
     # ------------------------------------------------------------------
     # MENÚ SUPERIOR: Archivo / Ver / Herramientas / Ayuda
@@ -320,6 +324,47 @@ class InterfazPrincipal(tk.Tk):
             tk.Label(entrada, text=descripcion, font=("Segoe UI", 9), fg=INK, bg=WHITE,
                      wraplength=190, justify="left").pack(anchor="w")
             linea_separadora(entrada, pady=(8, 0))
+
+        self._tiles = tiles
+        self._area = area
+        self._actividad = actividad
+        self._panel_principal = panel
+        self._tarjetas = []
+        # Columnas/filas de las tarjetas se reajustan según el ancho disponible.
+        for hijo in tiles.winfo_children():
+            if isinstance(hijo, tk.Frame):
+                self._tarjetas.append(hijo)
+
+    def _adaptar_distribucion(self, event=None):
+        """Reorganiza la página para que siga siendo usable al reducir la ventana."""
+        if event is not None and event.widget is not self:
+            return
+        if not hasattr(self, "_tiles"):
+            return
+        ancho = self.winfo_width()
+        compacto = ancho < 900
+        if compacto:
+            self._actividad.pack_forget()
+            self._panel_principal.pack_configure(padx=12, pady=12)
+        else:
+            self._actividad.pack(side="left", fill="y")
+            self._panel_principal.pack_configure(padx=24, pady=20)
+
+        columnas = 1 if ancho < 760 else (2 if ancho < 1100 else 3)
+        for c in range(3):
+            self._tiles.grid_columnconfigure(c, weight=1 if c < columnas else 0,
+                                              uniform="tile" if c < columnas else "")
+        normales = self._tarjetas[:6]
+        for i, tile in enumerate(normales):
+            tile.grid_forget()
+            tile.grid(row=i // columnas, column=i % columnas, padx=5, pady=5, sticky="nsew")
+        pedido = self._tarjetas[6]
+        pedido.grid_forget()
+        pedido.grid(row=(len(normales) + columnas - 1) // columnas,
+                    column=0, columnspan=columnas, padx=5, pady=(8, 5), sticky="nsew")
+        filas = (len(normales) + columnas - 1) // columnas + 1
+        for fila in range(5):
+            self._tiles.grid_rowconfigure(fila, weight=1 if fila < filas else 0, uniform="")
 
     def _crear_tile(self, parent, clave, titulo, icono, descripcion, contador,
                      ancha=False, comando=None):

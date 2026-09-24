@@ -1,17 +1,17 @@
-"""
+﻿"""
 ================================================================================
  CLIENTES - MACS COL
 ================================================================================
 
-Este módulo gestiona los clientes de MACS COL, con el mismo diseño "software
+Este mÃ³dulo gestiona los clientes de MACS COL, con el mismo diseÃ±o "software
 de escritorio" (mockup: macscol_app_menu_escritorio.html) que usan Principal
-y las demás ventanas de la aplicación. Los colores, fuentes y helpers viven
+y las demÃ¡s ventanas de la aplicaciÃ³n. Los colores, fuentes y helpers viven
 en estilo.py.
 
 Los datos se almacenan de forma permanente en SQLite mediante:
     almacenamiento.py
 
-La información se guarda en:
+La informaciÃ³n se guarda en:
     datos/macscol.db
 
 Funciones principales:
@@ -45,7 +45,7 @@ class VentanaCliente(tk.Toplevel):
 
         self.title("Clientes")
         self.geometry("760x560")
-        self.resizable(False, False)
+        self.resizable(True, True)
         self.configure(bg=CHROME)
 
         self.crear_componentes()
@@ -65,7 +65,7 @@ class VentanaCliente(tk.Toplevel):
         encabezado.pack(fill="x", pady=(0, 12))
         tk.Label(encabezado, text="Clientes registrados", font=FUENTE_SUBTITULO,
                  fg=INK, bg=CHROME).pack(side="left")
-        tk.Label(encabezado, text="Principal › Clientes", font=("Segoe UI", 9),
+        tk.Label(encabezado, text="Principal â€º Clientes", font=("Segoe UI", 9),
                  fg=GRAY, bg=CHROME).pack(side="right")
 
         # ---- Tarjeta con la tabla ----
@@ -100,13 +100,13 @@ class VentanaCliente(tk.Toplevel):
         botones = tk.Frame(cuerpo, bg=CHROME)
         botones.pack(fill="x", pady=(14, 0))
 
-        boton_primario(botones, "➕  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
+        boton_primario(botones, "âž•  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "🗑  Eliminar", self.eliminar, ancho=14).pack(
+        boton_secundario(botones, "ðŸ—‘  Eliminar", self.eliminar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "🔄  Actualizar", self.actualizar, ancho=14).pack(
+        boton_secundario(botones, "ðŸ”„  Actualizar", self.actualizar, ancho=14).pack(
             side="left"
         )
 
@@ -199,7 +199,7 @@ class VentanaCliente(tk.Toplevel):
             conexion = obtener_conexion()
             cursor = conexion.cursor()
 
-            # No enviamos el ID: SQLite lo genera automáticamente gracias a
+            # No enviamos el ID: SQLite lo genera automÃ¡ticamente gracias a
             # "id INTEGER PRIMARY KEY AUTOINCREMENT".
             cursor.execute(
                 "INSERT INTO clientes (nombre) VALUES (?)",
@@ -248,7 +248,7 @@ class VentanaCliente(tk.Toplevel):
 
         confirmar = messagebox.askyesno(
             "Eliminar cliente",
-            f"¿Seguro que deseas eliminar al cliente:\n\n"
+            f"Â¿Seguro que deseas eliminar al cliente:\n\n"
             f"{nombre_cliente}?"
         )
 
@@ -297,7 +297,7 @@ class VentanaCliente(tk.Toplevel):
 
 
 # ==============================================================================
-# EJECUCIÓN DIRECTA
+# EJECUCIÃ“N DIRECTA
 # ==============================================================================
 
 if __name__ == "__main__":

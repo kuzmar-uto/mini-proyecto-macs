@@ -4,6 +4,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import date
+import os
+from contextlib import closing
 
 from almacenamiento import obtener_conexion
 
@@ -80,13 +82,15 @@ class VentanaAgregarPedido(tk.Toplevel):
         # en la pantalla, para que quepa cómodamente en pantallas de
         # portátil (1366x768) sin quedar cortada por la barra de tareas.
         # ----------------------------------------------------------------
-        ancho_ventana, alto_ventana = 1200, 860
         ancho_pantalla = self.winfo_screenwidth()
         alto_pantalla = self.winfo_screenheight()
+        ancho_ventana = min(1200, max(900, ancho_pantalla - 40))
+        alto_ventana = min(950, max(680, alto_pantalla - 60))
         pos_x = (ancho_pantalla - ancho_ventana) // 2
         pos_y = max((alto_pantalla - alto_ventana) // 2 - 20, 0)
         self.geometry(f"{ancho_ventana}x{alto_ventana}+{pos_x}+{pos_y}")
-        self.resizable(False, False)
+        self.minsize(900, 650)
+        self.resizable(True, True)
         self.configure(bg=COLOR_CHROME)
 
         # Número de planilla (se incrementa cada vez que se guarda un pedido)
@@ -254,7 +258,7 @@ class VentanaAgregarPedido(tk.Toplevel):
             highlightthickness=1,
             bd=0,
         )
-        self.frame_izquierdo.place(x=30, y=90, width=520, height=230)
+        self.frame_izquierdo.place(x=30, y=80, width=520, height=190)
 
         tk.Label(
             self.frame_izquierdo, text="Cliente", font=FUENTE_ETIQUETA, fg=COLOR_INK, bg=COLOR_WHITE
@@ -294,7 +298,7 @@ class VentanaAgregarPedido(tk.Toplevel):
             highlightthickness=1,
             bd=0,
         )
-        self.frame_derecho.place(x=610, y=90, width=560, height=230)
+        self.frame_derecho.place(x=610, y=80, width=560, height=190)
 
         frame = tk.Frame(self.frame_derecho, bg=COLOR_WHITE)
         frame.place(x=25, y=15, width=510, height=200)
@@ -382,7 +386,8 @@ class VentanaAgregarPedido(tk.Toplevel):
             cursor = conexion.cursor()
             cursor.execute("""
                 SELECT pedidos.id, clientes.nombre, productos.nombre,
-                       detalle_pedido.cantidad, detalle_pedido.peso_total
+                       detalle_pedido.cantidad, detalle_pedido.peso_total,
+                       pedidos.numero_ruta
                 FROM pedidos
                 JOIN clientes ON clientes.id = pedidos.cliente_id
                 JOIN detalle_pedido ON detalle_pedido.pedido_id = pedidos.id
@@ -393,13 +398,14 @@ class VentanaAgregarPedido(tk.Toplevel):
             proximo_id = cursor.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM pedidos").fetchone()[0]
             conexion.close()
 
-            for id_pedido, cliente, producto, cantidad, peso in pedidos:
+            for id_pedido, cliente, producto, cantidad, peso, ruta in pedidos:
                 tag = "par" if len(self.tabla_pedidos.get_children()) % 2 == 0 else "impar"
                 self.tabla_pedidos.insert(
-                    "", "end", values=(id_pedido, cliente, producto, cantidad, peso), tags=(tag,)
+                    "", "end", values=(id_pedido, cliente, producto, cantidad, peso, ruta or ""), tags=(tag,)
                 )
 
             self.numero_planilla = proximo_id
+            self.siguiente_id_pedido = proximo_id
             self.label_planilla.config(text=f"Planilla No {self.numero_planilla}")
 
         except Exception as error:
@@ -407,7 +413,7 @@ class VentanaAgregarPedido(tk.Toplevel):
 
     def _crear_fila_listar(self):
         frame = tk.Frame(self, bg=COLOR_FONDO)
-        frame.place(x=30, y=390, width=1150, height=160)
+        frame.place(x=30, y=280, width=1150, height=100)
 
         tk.Button(
             frame,
@@ -436,7 +442,7 @@ class VentanaAgregarPedido(tk.Toplevel):
             frame, text="Observaciones", font=FUENTE_ETIQUETA, bg=COLOR_FONDO
         ).place(x=520, y=20)
 
-        self.texto_observaciones = tk.Text(frame, width=36, height=8)
+        self.texto_observaciones = tk.Text(frame, width=36, height=3)
         self.texto_observaciones.place(x=520, y=50)
 
     # ------------------------------------------------------------------
@@ -444,10 +450,10 @@ class VentanaAgregarPedido(tk.Toplevel):
     # ------------------------------------------------------------------
     def _crear_tablas(self):
         frame = tk.Frame(self, bg=COLOR_FONDO)
-        frame.place(x=30, y=560, width=1150, height=250)
+        frame.place(x=30, y=390, width=1150, height=180)
 
         # ---------- Tabla izquierda: pedidos guardados ----------
-        columnas_1 = ("Id", "Cliente", "Producto", "Cantidad", "Peso Total")
+        columnas_1 = ("Id", "Cliente", "Producto", "Cantidad", "Peso Total", "Ruta")
         self.tabla_pedidos = ttk.Treeview(
             frame,
             columns=columnas_1,
@@ -455,12 +461,12 @@ class VentanaAgregarPedido(tk.Toplevel):
             height=9,
             style="Excel.Treeview",
         )
-        anchos_1 = (50, 180, 180, 100, 110)
+        anchos_1 = (45, 130, 145, 75, 90, 90)
         for col, ancho in zip(columnas_1, anchos_1):
             self.tabla_pedidos.heading(col, text=col)
             self.tabla_pedidos.column(col, width=ancho, anchor="center")
 
-        self.tabla_pedidos.place(x=0, y=0, width=630, height=230)
+        self.tabla_pedidos.place(x=0, y=0, width=630, height=170)
         self._aplicar_filas_alternas(self.tabla_pedidos)
 
         # ---------- Tabla derecha: items del pedido actual ----------
@@ -477,7 +483,7 @@ class VentanaAgregarPedido(tk.Toplevel):
             self.tabla_items.heading(col, text=col)
             self.tabla_items.column(col, width=ancho, anchor="center")
 
-        self.tabla_items.place(x=660, y=0, width=490, height=230)
+        self.tabla_items.place(x=660, y=0, width=490, height=170)
         self._aplicar_filas_alternas(self.tabla_items)
 
     # ------------------------------------------------------------------
@@ -485,7 +491,7 @@ class VentanaAgregarPedido(tk.Toplevel):
     # ------------------------------------------------------------------
     def _crear_pie_formulario(self):
         frame = tk.Frame(self, bg=COLOR_FONDO)
-        frame.place(x=30, y=830, width=1150, height=110)
+        frame.place(x=30, y=585, width=1150, height=100)
 
         tk.Button(
             frame,
@@ -495,13 +501,13 @@ class VentanaAgregarPedido(tk.Toplevel):
             font=FUENTE_BOTON,
             width=12,
             command=self.eliminar_pedido,
-        ).place(x=0, y=0)
+        ).place(x=0, y=5)
 
         tk.Label(
-            frame, text="Id Pedido a eliminar", font=FUENTE_ETIQUETA, bg=COLOR_FONDO
-        ).place(x=320, y=0)
+            frame, text="ID pedido a eliminar", font=FUENTE_ETIQUETA, bg=COLOR_FONDO
+        ).place(x=145, y=5)
         self.entrada_id_eliminar = tk.Entry(frame, width=25)
-        self.entrada_id_eliminar.place(x=320, y=28)
+        self.entrada_id_eliminar.place(x=145, y=32)
 
         tk.Button(
             frame,
@@ -511,13 +517,13 @@ class VentanaAgregarPedido(tk.Toplevel):
             font=FUENTE_BOTON,
             width=12,
             command=self.actualizar,
-        ).place(x=0, y=65)
+        ).place(x=0, y=55)
 
         tk.Label(
-            frame, text="Numero de Ruta", font=FUENTE_ETIQUETA, bg=COLOR_FONDO
-        ).place(x=320, y=65)
+            frame, text="Número de ruta", font=FUENTE_ETIQUETA, bg=COLOR_FONDO
+        ).place(x=145, y=55)
         self.entrada_numero_ruta = tk.Entry(frame, width=25)
-        self.entrada_numero_ruta.place(x=320, y=93)
+        self.entrada_numero_ruta.place(x=145, y=78)
 
         tk.Button(
             frame,
@@ -550,12 +556,13 @@ class VentanaAgregarPedido(tk.Toplevel):
             return
 
         cantidad = int(cantidad_texto)
-        peso_unitario = PESO_UNITARIO_DEMO.get(producto, 0)
+        producto_id, nombre_producto, peso_unitario = self.productos[producto]
         peso_item = cantidad * peso_unitario
 
         # Se agrega a la lista en memoria del pedido actual
         self.items_pedido_actual.append(
-            {"producto": producto, "cantidad": cantidad, "peso": peso_item}
+            {"producto_id": producto_id, "producto": nombre_producto,
+             "cantidad": cantidad, "peso": peso_item}
         )
 
         tag = "par" if len(self.tabla_items.get_children()) % 2 == 0 else "impar"
@@ -587,22 +594,75 @@ class VentanaAgregarPedido(tk.Toplevel):
             )
             return
 
-        id_pedido = self.siguiente_id_pedido
+        cliente_id = self.clientes[cliente]
+        vehiculo = self.combos_derecha["Vehiculo"].get()
+        destino = self.combos_derecha["Destino"].get()
+        conductor = self.combos_derecha["Conductor"].get()
+        observaciones = self.texto_observaciones.get("1.0", "end").strip()
+        numero_ruta = self.entrada_numero_ruta.get().strip() or None
+        fecha = date.today().isoformat()
 
-        for item in self.items_pedido_actual:
-            tag = "par" if len(self.tabla_pedidos.get_children()) % 2 == 0 else "impar"
-            self.tabla_pedidos.insert(
-                "",
-                "end",
-                values=(id_pedido, cliente, item["producto"], item["cantidad"], item["peso"]),
-                tags=(tag,),
+        try:
+            with closing(obtener_conexion()) as conexion:
+                cursor = conexion.cursor()
+                cursor.execute("""
+                    INSERT INTO pedidos
+                        (cliente_id, vehiculo_id, destino_id, conductor_cedula,
+                         numero_ruta, observaciones, fecha)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    cliente_id,
+                    self.vehiculos.get(vehiculo),
+                    self.destinos.get(destino),
+                    self.conductores.get(conductor),
+                    numero_ruta,
+                    observaciones,
+                    fecha,
+                ))
+                id_pedido = cursor.lastrowid
+                cursor.executemany("""
+                    INSERT INTO detalle_pedido
+                        (pedido_id, producto_id, cantidad, peso_total)
+                    VALUES (?, ?, ?, ?)
+                """, [
+                    (id_pedido, item["producto_id"], item["cantidad"], item["peso"])
+                    for item in self.items_pedido_actual
+                ])
+                conexion.commit()
+        except Exception as error:
+            messagebox.showerror("Pedido", f"No se pudo guardar el pedido:\n\n{error}")
+            return
+
+        self.cargar_pedidos()
+
+        planilla_creada = False
+        try:
+            from c import generar_planilla_despacho
+
+            carpeta_proyecto = os.path.dirname(os.path.abspath(__file__))
+            carpeta_planillas = os.path.join(carpeta_proyecto, "planillas")
+            os.makedirs(carpeta_planillas, exist_ok=True)
+            filas_planilla = [
+                {
+                    "cliente": cliente.split(" - ", 1)[-1],
+                    "producto": item["producto"],
+                    "cantidad": item["cantidad"],
+                    "no_envio": numero_ruta or "",
+                }
+                for item in self.items_pedido_actual
+            ]
+            plantilla = os.path.join(carpeta_proyecto, "17092026EYZ9456262F PASTO.docx")
+            archivo_planilla = os.path.join(carpeta_planillas, f"planilla_{id_pedido}.docx")
+            generar_planilla_despacho(filas_planilla, plantilla, archivo_planilla)
+            planilla_creada = True
+        except Exception as error:
+            messagebox.showwarning(
+                "Pedido guardado",
+                f"El pedido {id_pedido} quedó guardado en la base de datos, "
+                f"pero no se pudo crear el archivo de la planilla:\n\n{error}",
             )
 
         # Prepara el formulario para el siguiente pedido
-        self.siguiente_id_pedido += 1
-        self.numero_planilla += 1
-        self.label_planilla.config(text=f"Planilla No {self.numero_planilla}")
-
         self.items_pedido_actual = []
         self.peso_total_actual = 0
         self.label_peso.config(text=f"Peso {self.peso_total_actual}")
@@ -612,9 +672,11 @@ class VentanaAgregarPedido(tk.Toplevel):
 
         self.combo_cliente.set("")
         self.texto_observaciones.delete("1.0", "end")
-        self.entrada_numero_ruta.delete(0, "end")
-
-        messagebox.showinfo("Pedido", f"Pedido No {id_pedido} guardado correctamente.")
+        if planilla_creada:
+            messagebox.showinfo(
+                "Pedido",
+                f"Pedido No {id_pedido} guardado. Planilla creada en:\n{archivo_planilla}",
+            )
 
     def eliminar_pedido(self):
         """Elimina de la tabla izquierda TODAS las filas que tengan el Id escrito."""
@@ -624,12 +686,17 @@ class VentanaAgregarPedido(tk.Toplevel):
             messagebox.showwarning("Pedido", "Debe escribir un Id de pedido.")
             return
 
-        filas_eliminadas = 0
-        for fila in self.tabla_pedidos.get_children():
-            valores = self.tabla_pedidos.item(fila, "values")
-            if valores and str(valores[0]) == id_buscado:
-                self.tabla_pedidos.delete(fila)
-                filas_eliminadas += 1
+        try:
+            with closing(obtener_conexion()) as conexion:
+                cursor = conexion.cursor()
+                cursor.execute("DELETE FROM pedidos WHERE id = ?", (id_buscado,))
+                filas_eliminadas = cursor.rowcount
+                conexion.commit()
+        except Exception as error:
+            messagebox.showerror("Pedido", f"No se pudo eliminar el pedido:\n\n{error}")
+            return
+
+        self.cargar_pedidos()
 
         if filas_eliminadas == 0:
             messagebox.showwarning(
@@ -637,12 +704,35 @@ class VentanaAgregarPedido(tk.Toplevel):
             )
         else:
             messagebox.showinfo(
-                "Pedido", f"Se eliminó el pedido No {id_buscado} ({filas_eliminadas} producto(s))."
+                "Pedido", f"Se eliminó el pedido No {id_buscado} de la base de datos."
             )
         self.entrada_id_eliminar.delete(0, "end")
 
     def actualizar(self):
-        messagebox.showinfo("Pedido", "Datos actualizados.")
+        seleccion = self.tabla_pedidos.selection()
+        numero_ruta = self.entrada_numero_ruta.get().strip()
+        if not seleccion:
+            messagebox.showwarning("Pedido", "Selecciona un pedido en la tabla para actualizar su ruta.")
+            return
+        if not numero_ruta:
+            messagebox.showwarning("Pedido", "Escribe el número de ruta.")
+            return
+
+        id_pedido = self.tabla_pedidos.item(seleccion[0], "values")[0]
+        try:
+            with closing(obtener_conexion()) as conexion:
+                cursor = conexion.cursor()
+                cursor.execute("UPDATE pedidos SET numero_ruta = ? WHERE id = ?",
+                               (numero_ruta, id_pedido))
+                actualizado = cursor.rowcount
+                conexion.commit()
+        except Exception as error:
+            messagebox.showerror("Pedido", f"No se pudo actualizar la ruta:\n\n{error}")
+            return
+        self.cargar_pedidos()
+        self.entrada_numero_ruta.delete(0, "end")
+        if actualizado:
+            messagebox.showinfo("Pedido", f"Ruta del pedido {id_pedido} actualizada.")
 
 
 if __name__ == "__main__":

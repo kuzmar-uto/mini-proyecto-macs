@@ -1,10 +1,10 @@
-"""
+﻿"""
 ================================================================================
  DESTINOS - MACS COL
 ================================================================================
-Ventana de gestión de destinos, con el mismo diseño "software de escritorio"
-(mockup: macscol_app_menu_escritorio.html) que usan Principal y las demás
-ventanas de la aplicación. Los colores, fuentes y helpers viven en estilo.py.
+Ventana de gestiÃ³n de destinos, con el mismo diseÃ±o "software de escritorio"
+(mockup: macscol_app_menu_escritorio.html) que usan Principal y las demÃ¡s
+ventanas de la aplicaciÃ³n. Los colores, fuentes y helpers viven en estilo.py.
 ================================================================================
 """
 
@@ -27,10 +27,10 @@ class VentanaDestino(tk.Toplevel):
 
         self.title("Destinos")
         self.geometry("760x560")
-        self.resizable(False, False)
+        self.resizable(True, True)
         self.configure(bg=CHROME)
 
-        # Contador simple para ir asignando el ID automáticamente
+        # Contador simple para ir asignando el ID automÃ¡ticamente
         # (empieza en 1 y sube de uno en uno con cada destino agregado)
         self.siguiente_id = 1
 
@@ -47,7 +47,7 @@ class VentanaDestino(tk.Toplevel):
         encabezado.pack(fill="x", pady=(0, 12))
         tk.Label(encabezado, text="Destinos y puntos de entrega", font=FUENTE_SUBTITULO,
                  fg=INK, bg=CHROME).pack(side="left")
-        tk.Label(encabezado, text="Principal › Destinos", font=("Segoe UI", 9),
+        tk.Label(encabezado, text="Principal â€º Destinos", font=("Segoe UI", 9),
                  fg=GRAY, bg=CHROME).pack(side="right")
 
         tarjeta = tk.Frame(cuerpo, bg=WHITE, highlightbackground=CHROME_LINE,
@@ -71,13 +71,13 @@ class VentanaDestino(tk.Toplevel):
         botones = tk.Frame(cuerpo, bg=CHROME)
         botones.pack(fill="x", pady=(14, 0))
 
-        boton_primario(botones, "➕  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
+        boton_primario(botones, "âž•  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "🗑  Eliminar", self.eliminar, ancho=14).pack(
+        boton_secundario(botones, "ðŸ—‘  Eliminar", self.eliminar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "🔄  Actualizar", self.actualizar, ancho=14).pack(
+        boton_secundario(botones, "ðŸ”„  Actualizar", self.actualizar, ancho=14).pack(
             side="left"
         )
 
@@ -169,7 +169,7 @@ class VentanaDestino(tk.Toplevel):
             )
 
     # ------------------------------------------------------------------
-    # ELIMINAR (por selección, o por ID si no hay nada seleccionado)
+    # ELIMINAR (por selecciÃ³n, o por ID si no hay nada seleccionado)
     # ------------------------------------------------------------------
     def eliminar(self):
         seleccionado = self.tabla.selection()
@@ -227,7 +227,7 @@ class VentanaDestino(tk.Toplevel):
 
         messagebox.showwarning(
             "Destino",
-            f"No se encontró ningún destino con el ID '{id_buscado}'."
+            f"No se encontrÃ³ ningÃºn destino con el ID '{id_buscado}'."
         )
 
     def eliminar_destino(self, id_destino):

@@ -1,10 +1,10 @@
-"""
+﻿"""
 ================================================================================
- VEHÍCULOS - MACS COL
+ VEHÃCULOS - MACS COL
 ================================================================================
-Ventana de gestión de vehículos, con el mismo diseño "software de escritorio"
-(mockup: macscol_app_menu_escritorio.html) que usan Principal y las demás
-ventanas de la aplicación. Los colores, fuentes y helpers viven en estilo.py.
+Ventana de gestiÃ³n de vehÃ­culos, con el mismo diseÃ±o "software de escritorio"
+(mockup: macscol_app_menu_escritorio.html) que usan Principal y las demÃ¡s
+ventanas de la aplicaciÃ³n. Los colores, fuentes y helpers viven en estilo.py.
 ================================================================================
 """
 
@@ -25,9 +25,9 @@ class VentanaVehiculo(tk.Toplevel):
     def __init__(self, master=None):
         super().__init__(master)
 
-        self.title("Vehículos")
+        self.title("VehÃ­culos")
         self.geometry("760x560")
-        self.resizable(False, False)
+        self.resizable(True, True)
         self.configure(bg=CHROME)
 
         self.crear_componentes()
@@ -37,16 +37,16 @@ class VentanaVehiculo(tk.Toplevel):
     # COMPONENTES
     # ------------------------------------------------------------------
     def crear_componentes(self):
-        barra_titulo_ventana(self, "Vehículos")
+        barra_titulo_ventana(self, "VehÃ­culos")
 
         cuerpo = tk.Frame(self, bg=CHROME)
         cuerpo.pack(fill="both", expand=True, padx=24, pady=18)
 
         encabezado = tk.Frame(cuerpo, bg=CHROME)
         encabezado.pack(fill="x", pady=(0, 12))
-        tk.Label(encabezado, text="Flota de vehículos", font=FUENTE_SUBTITULO,
+        tk.Label(encabezado, text="Flota de vehÃ­culos", font=FUENTE_SUBTITULO,
                  fg=INK, bg=CHROME).pack(side="left")
-        tk.Label(encabezado, text="Principal › Vehículos", font=("Segoe UI", 9),
+        tk.Label(encabezado, text="Principal â€º VehÃ­culos", font=("Segoe UI", 9),
                  fg=GRAY, bg=CHROME).pack(side="right")
 
         # ---- Tarjeta con la tabla ----
@@ -72,13 +72,13 @@ class VentanaVehiculo(tk.Toplevel):
         botones = tk.Frame(cuerpo, bg=CHROME)
         botones.pack(fill="x", pady=(14, 0))
 
-        boton_primario(botones, "➕  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
+        boton_primario(botones, "âž•  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "🗑  Eliminar", self.eliminar, ancho=14).pack(
+        boton_secundario(botones, "ðŸ—‘  Eliminar", self.eliminar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "🔄  Actualizar", self.actualizar, ancho=14).pack(
+        boton_secundario(botones, "ðŸ”„  Actualizar", self.actualizar, ancho=14).pack(
             side="left"
         )
 
@@ -86,7 +86,7 @@ class VentanaVehiculo(tk.Toplevel):
     # CARGAR
     # ------------------------------------------------------------------
     def cargar_vehiculos(self):
-        """Consulta los vehículos guardados y los muestra en la tabla."""
+        """Consulta los vehÃ­culos guardados y los muestra en la tabla."""
         for fila in self.tabla.get_children():
             self.tabla.delete(fila)
 
@@ -105,7 +105,7 @@ class VentanaVehiculo(tk.Toplevel):
                 self.tabla.insert("", "end", values=(placa, capacidad))
         except Exception as error:
             messagebox.showerror(
-                "Error", f"No se pudieron cargar los vehículos:\n\n{error}"
+                "Error", f"No se pudieron cargar los vehÃ­culos:\n\n{error}"
             )
 
     # ------------------------------------------------------------------
@@ -113,11 +113,11 @@ class VentanaVehiculo(tk.Toplevel):
     # ------------------------------------------------------------------
     def abrir_ventana_agregar(self):
         ventana = tk.Toplevel(self)
-        ventana.title("Agregar vehículo")
+        ventana.title("Agregar vehÃ­culo")
         ventana.geometry("360x280")
         ventana.resizable(False, False)
         ventana.configure(bg=CHROME)
-        barra_titulo_ventana(ventana, "Agregar vehículo")
+        barra_titulo_ventana(ventana, "Agregar vehÃ­culo")
 
         contenido = tk.Frame(ventana, bg=CHROME)
         contenido.pack(fill="both", expand=True, padx=22, pady=18)
@@ -152,7 +152,7 @@ class VentanaVehiculo(tk.Toplevel):
 
         if not placa or not capacidad:
             messagebox.showwarning(
-                "Vehículo",
+                "VehÃ­culo",
                 "Debes llenar la placa y la capacidad."
             )
             return
@@ -169,10 +169,10 @@ class VentanaVehiculo(tk.Toplevel):
 
             self.cargar_vehiculos()
             ventana.destroy()
-            messagebox.showinfo("Vehículo", "Vehículo guardado correctamente.")
+            messagebox.showinfo("VehÃ­culo", "VehÃ­culo guardado correctamente.")
         except Exception as error:
             messagebox.showerror(
-                "Error", f"No se pudo guardar el vehículo:\n\n{error}"
+                "Error", f"No se pudo guardar el vehÃ­culo:\n\n{error}"
             )
 
     # ------------------------------------------------------------------
@@ -189,16 +189,16 @@ class VentanaVehiculo(tk.Toplevel):
             return
 
         # Caso 2: no hay ninguna fila seleccionada -> se abre una ventana
-        # para buscar y eliminar el vehículo escribiendo su placa.
+        # para buscar y eliminar el vehÃ­culo escribiendo su placa.
         self.abrir_ventana_eliminar_por_placa()
 
     def abrir_ventana_eliminar_por_placa(self):
         ventana = tk.Toplevel(self)
-        ventana.title("Eliminar vehículo")
+        ventana.title("Eliminar vehÃ­culo")
         ventana.geometry("360x220")
         ventana.resizable(False, False)
         ventana.configure(bg=CHROME)
-        barra_titulo_ventana(ventana, "Eliminar vehículo")
+        barra_titulo_ventana(ventana, "Eliminar vehÃ­culo")
 
         contenido = tk.Frame(ventana, bg=CHROME)
         contenido.pack(fill="both", expand=True, padx=22, pady=18)
@@ -217,7 +217,7 @@ class VentanaVehiculo(tk.Toplevel):
             ancho=16,
         ).pack(pady=(22, 0))
 
-        # Permite presionar Enter en vez de tener que hacer clic en el botón
+        # Permite presionar Enter en vez de tener que hacer clic en el botÃ³n
         ventana.bind(
             "<Return>",
             lambda event: self.eliminar_por_placa(entrada_placa, ventana)
@@ -228,7 +228,7 @@ class VentanaVehiculo(tk.Toplevel):
 
         if not placa_buscada:
             messagebox.showwarning(
-                "Vehículo",
+                "VehÃ­culo",
                 "Debe escribir una placa."
             )
             return
@@ -239,12 +239,12 @@ class VentanaVehiculo(tk.Toplevel):
 
         # Si termina el for sin encontrar coincidencia
         messagebox.showwarning(
-            "Vehículo",
-            f"No se encontró ningún vehículo con la placa '{placa_buscada}'."
+            "VehÃ­culo",
+            f"No se encontrÃ³ ningÃºn vehÃ­culo con la placa '{placa_buscada}'."
         )
 
     def eliminar_vehiculo(self, placa):
-        """Elimina un vehículo por su placa y recarga la tabla."""
+        """Elimina un vehÃ­culo por su placa y recarga la tabla."""
         try:
             conexion = obtener_conexion()
             cursor = conexion.cursor()
@@ -257,11 +257,11 @@ class VentanaVehiculo(tk.Toplevel):
                 return False
 
             self.cargar_vehiculos()
-            messagebox.showinfo("Vehículo", "Vehículo eliminado correctamente.")
+            messagebox.showinfo("VehÃ­culo", "VehÃ­culo eliminado correctamente.")
             return True
         except Exception as error:
             messagebox.showerror(
-                "Error", f"No se pudo eliminar el vehículo:\n\n{error}"
+                "Error", f"No se pudo eliminar el vehÃ­culo:\n\n{error}"
             )
             return False
 
@@ -271,7 +271,7 @@ class VentanaVehiculo(tk.Toplevel):
     def actualizar(self):
         self.cargar_vehiculos()
         messagebox.showinfo(
-            "Vehículo",
+            "VehÃ­culo",
             "Datos actualizados."
         )
 

@@ -1,24 +1,24 @@
-"""
+﻿"""
 ================================================================================
  CONDUCTORES - MACS COL
 ================================================================================
 
-Este módulo gestiona los conductores de MACS COL, con el mismo diseño
+Este mÃ³dulo gestiona los conductores de MACS COL, con el mismo diseÃ±o
 "software de escritorio" (mockup: macscol_app_menu_escritorio.html) que usan
-Principal y las demás ventanas de la aplicación. Los colores, fuentes y
+Principal y las demÃ¡s ventanas de la aplicaciÃ³n. Los colores, fuentes y
 helpers viven en estilo.py.
 
 Los datos se almacenan de forma permanente en SQLite mediante:
     almacenamiento.py
 
-La información se guarda en:
+La informaciÃ³n se guarda en:
     datos/macscol.db
 
 Funciones principales:
     - Cargar conductores desde la base de datos.
     - Agregar nuevos conductores.
     - Eliminar conductores.
-    - Eliminar por cédula.
+    - Eliminar por cÃ©dula.
     - Actualizar/refrescar la tabla.
 ================================================================================
 """
@@ -46,7 +46,7 @@ class VentanaConductor(tk.Toplevel):
 
         self.title("Conductores")
         self.geometry("820x580")
-        self.resizable(False, False)
+        self.resizable(True, True)
         self.configure(bg=CHROME)
 
         self.crear_componentes()
@@ -66,7 +66,7 @@ class VentanaConductor(tk.Toplevel):
         encabezado.pack(fill="x", pady=(0, 12))
         tk.Label(encabezado, text="Conductores registrados", font=FUENTE_SUBTITULO,
                  fg=INK, bg=CHROME).pack(side="left")
-        tk.Label(encabezado, text="Principal › Conductores", font=("Segoe UI", 9),
+        tk.Label(encabezado, text="Principal â€º Conductores", font=("Segoe UI", 9),
                  fg=GRAY, bg=CHROME).pack(side="right")
 
         # ---- Tarjeta con la tabla ----
@@ -90,9 +90,9 @@ class VentanaConductor(tk.Toplevel):
             style=estilo_tabla,
         )
 
-        self.tabla.heading("cedula", text="Cédula")
+        self.tabla.heading("cedula", text="CÃ©dula")
         self.tabla.heading("nombre", text="Nombre")
-        self.tabla.heading("telefono", text="Teléfono")
+        self.tabla.heading("telefono", text="TelÃ©fono")
 
         self.tabla.column("cedula", width=180, anchor="center")
         self.tabla.column("nombre", width=320, anchor="center")
@@ -105,13 +105,13 @@ class VentanaConductor(tk.Toplevel):
         botones = tk.Frame(cuerpo, bg=CHROME)
         botones.pack(fill="x", pady=(14, 0))
 
-        boton_primario(botones, "➕  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
+        boton_primario(botones, "âž•  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "🗑  Eliminar", self.eliminar, ancho=14).pack(
+        boton_secundario(botones, "ðŸ—‘  Eliminar", self.eliminar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "🔄  Actualizar", self.actualizar, ancho=14).pack(
+        boton_secundario(botones, "ðŸ”„  Actualizar", self.actualizar, ancho=14).pack(
             side="left"
         )
 
@@ -167,7 +167,7 @@ class VentanaConductor(tk.Toplevel):
         contenido = tk.Frame(ventana, bg=CHROME)
         contenido.pack(fill="both", expand=True, padx=22, pady=18)
 
-        tk.Label(contenido, text="Cédula:", font=FUENTE_ETIQUETA, fg=INK,
+        tk.Label(contenido, text="CÃ©dula:", font=FUENTE_ETIQUETA, fg=INK,
                  bg=CHROME).pack(anchor="w", pady=(4, 4))
         entrada_cedula = tk.Entry(contenido, width=30, font=FUENTE_TEXTO, relief="solid",
                                    highlightbackground=CHROME_LINE, bd=1)
@@ -180,7 +180,7 @@ class VentanaConductor(tk.Toplevel):
                                    highlightbackground=CHROME_LINE, bd=1)
         entrada_nombre.pack(fill="x", ipady=4)
 
-        tk.Label(contenido, text="Teléfono:", font=FUENTE_ETIQUETA, fg=INK,
+        tk.Label(contenido, text="TelÃ©fono:", font=FUENTE_ETIQUETA, fg=INK,
                  bg=CHROME).pack(anchor="w", pady=(12, 4))
         entrada_telefono = tk.Entry(contenido, width=30, font=FUENTE_TEXTO, relief="solid",
                                      highlightbackground=CHROME_LINE, bd=1)
@@ -216,7 +216,7 @@ class VentanaConductor(tk.Toplevel):
         if not cedula or not nombre or not telefono:
             messagebox.showwarning(
                 "Conductor",
-                "Debes llenar la cédula, el nombre y el teléfono."
+                "Debes llenar la cÃ©dula, el nombre y el telÃ©fono."
             )
             return
 
@@ -247,7 +247,7 @@ class VentanaConductor(tk.Toplevel):
             if "UNIQUE constraint failed" in str(e):
                 messagebox.showwarning(
                     "Conductor",
-                    f"Ya existe un conductor con la cédula '{cedula}'."
+                    f"Ya existe un conductor con la cÃ©dula '{cedula}'."
                 )
             else:
                 messagebox.showerror(
@@ -274,9 +274,9 @@ class VentanaConductor(tk.Toplevel):
 
             confirmar = messagebox.askyesno(
                 "Eliminar conductor",
-                f"¿Seguro que deseas eliminar al conductor:\n\n"
+                f"Â¿Seguro que deseas eliminar al conductor:\n\n"
                 f"{nombre}\n"
-                f"Cédula: {cedula}?"
+                f"CÃ©dula: {cedula}?"
             )
 
             if not confirmar:
@@ -285,11 +285,11 @@ class VentanaConductor(tk.Toplevel):
             self.eliminar_conductor_por_cedula(cedula)
             return
 
-        # Si no hay selección, abrir ventana para buscar por cédula
+        # Si no hay selecciÃ³n, abrir ventana para buscar por cÃ©dula
         self.abrir_ventana_eliminar_por_cedula()
 
     # ==========================================================================
-    # VENTANA ELIMINAR POR CÉDULA
+    # VENTANA ELIMINAR POR CÃ‰DULA
     # ==========================================================================
 
     def abrir_ventana_eliminar_por_cedula(self):
@@ -303,7 +303,7 @@ class VentanaConductor(tk.Toplevel):
         contenido = tk.Frame(ventana, bg=CHROME)
         contenido.pack(fill="both", expand=True, padx=22, pady=18)
 
-        tk.Label(contenido, text="Ingrese la cédula a eliminar:", font=FUENTE_ETIQUETA,
+        tk.Label(contenido, text="Ingrese la cÃ©dula a eliminar:", font=FUENTE_ETIQUETA,
                  fg=INK, bg=CHROME).pack(anchor="w", pady=(4, 4))
 
         entrada_cedula = tk.Entry(contenido, width=28, font=FUENTE_TEXTO, relief="solid",
@@ -323,19 +323,19 @@ class VentanaConductor(tk.Toplevel):
         )
 
     # ==========================================================================
-    # ELIMINAR POR CÉDULA
+    # ELIMINAR POR CÃ‰DULA
     # ==========================================================================
 
     def eliminar_por_cedula(self, entrada_cedula, ventana):
         """
-        Busca un conductor por su cédula y lo elimina de SQLite.
+        Busca un conductor por su cÃ©dula y lo elimina de SQLite.
         """
         cedula_buscada = entrada_cedula.get().strip()
 
         if not cedula_buscada:
             messagebox.showwarning(
                 "Conductor",
-                "Debe escribir una cédula."
+                "Debe escribir una cÃ©dula."
             )
             return
 
@@ -352,7 +352,7 @@ class VentanaConductor(tk.Toplevel):
             if filas_eliminadas == 0:
                 messagebox.showwarning(
                     "Conductor",
-                    f"No se encontró ningún conductor con la cédula '{cedula_buscada}'."
+                    f"No se encontrÃ³ ningÃºn conductor con la cÃ©dula '{cedula_buscada}'."
                 )
                 return
 
@@ -371,12 +371,12 @@ class VentanaConductor(tk.Toplevel):
             )
 
     # ==========================================================================
-    # ELIMINAR CONDUCTOR POR CÉDULA
+    # ELIMINAR CONDUCTOR POR CÃ‰DULA
     # ==========================================================================
 
     def eliminar_conductor_por_cedula(self, cedula):
         """
-        Elimina directamente un conductor utilizando su cédula.
+        Elimina directamente un conductor utilizando su cÃ©dula.
         """
         try:
             conexion = obtener_conexion()
@@ -391,7 +391,7 @@ class VentanaConductor(tk.Toplevel):
             if filas_eliminadas == 0:
                 messagebox.showwarning(
                     "Conductor",
-                    f"No se encontró ningún conductor con la cédula '{cedula}'."
+                    f"No se encontrÃ³ ningÃºn conductor con la cÃ©dula '{cedula}'."
                 )
                 return
 
@@ -425,7 +425,7 @@ class VentanaConductor(tk.Toplevel):
 
 
 # ==============================================================================
-# EJECUCIÓN DIRECTA
+# EJECUCIÃ“N DIRECTA
 # ==============================================================================
 
 if __name__ == "__main__":
