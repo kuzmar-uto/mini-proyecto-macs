@@ -163,6 +163,73 @@ def crear_base_datos():
 
 
 # ==============================================================================
+# DATOS PARA LA PLANILLA DE DESPACHO (por numero de ruta)
+# ==============================================================================
+
+def obtener_datos_planilla(numero_ruta):
+    """
+    Reune todo lo necesario para imprimir la Planilla de Despacho de una
+    ruta: puede incluir varios pedidos (uno por cliente) que compartan el
+    mismo numero_ruta, tal como el formato fisico (una fila por cliente).
+
+    Devuelve (encabezado: dict, filas: list[dict]).
+    `filas` trae una linea por cada producto de cada pedido de la ruta,
+    lista para pasarle directo a c.generar_planilla_despacho().
+    """
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    registros = cursor.execute("""
+        SELECT
+            clientes.nombre,
+            productos.nombre,
+            detalle_pedido.cantidad,
+            pedidos.id,
+            vehiculos.placa,
+            destinos.nombre,
+            conductores.nombre,
+            pedidos.fecha
+        FROM pedidos
+        JOIN clientes ON clientes.id = pedidos.cliente_id
+        JOIN detalle_pedido ON detalle_pedido.pedido_id = pedidos.id
+        JOIN productos ON productos.id = detalle_pedido.producto_id
+        LEFT JOIN vehiculos ON vehiculos.id = pedidos.vehiculo_id
+        LEFT JOIN destinos ON destinos.id = pedidos.destino_id
+        LEFT JOIN conductores ON conductores.cedula = pedidos.conductor_cedula
+        WHERE pedidos.numero_ruta = ?
+        ORDER BY pedidos.id, detalle_pedido.id
+    """, (numero_ruta,)).fetchall()
+
+    conexion.close()
+
+    encabezado = {
+        "numero_ruta": numero_ruta,
+        "vehiculo": "", "destino": "", "conductor": "", "fecha": "",
+    }
+    filas = []
+
+    for nombre_cliente, nombre_producto, cantidad, pedido_id, placa, \
+            nombre_destino, nombre_conductor, fecha in registros:
+        filas.append({
+            "cliente": nombre_cliente,
+            "producto": nombre_producto,
+            "cantidad": cantidad,
+            "remision": pedido_id,
+        })
+        # el encabezado se llena con el primer registro que traiga cada dato
+        if not encabezado["vehiculo"] and placa:
+            encabezado["vehiculo"] = placa
+        if not encabezado["destino"] and nombre_destino:
+            encabezado["destino"] = nombre_destino
+        if not encabezado["conductor"] and nombre_conductor:
+            encabezado["conductor"] = nombre_conductor
+        if not encabezado["fecha"] and fecha:
+            encabezado["fecha"] = fecha
+
+    return encabezado, filas
+
+
+# ==============================================================================
 # EJECUCIÓN DIRECTA
 # ==============================================================================
 

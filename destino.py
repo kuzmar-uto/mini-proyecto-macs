@@ -2,9 +2,9 @@
 ================================================================================
  DESTINOS - MACS COL
 ================================================================================
-Ventana de gestiÃ³n de destinos, con el mismo diseÃ±o "software de escritorio"
-(mockup: macscol_app_menu_escritorio.html) que usan Principal y las demÃ¡s
-ventanas de la aplicaciÃ³n. Los colores, fuentes y helpers viven en estilo.py.
+Ventana de gestión de destinos, con el mismo diseño "software de escritorio"
+(mockup: macscol_app_menu_escritorio.html) que usan Principal y las demás
+ventanas de la aplicación. Los colores, fuentes y helpers viven en estilo.py.
 ================================================================================
 """
 
@@ -14,6 +14,7 @@ from tkinter import ttk, messagebox
 from almacenamiento import obtener_conexion
 from estilo import (
     CHROME, CHROME_LINE, NAVY, NAVY_DEEP, ACCENT, ACCENT_BG, INK, GRAY, WHITE,
+    ajustar_geometria_ventana,
     FUENTE_SUBTITULO, FUENTE_ETIQUETA, FUENTE_TEXTO,
     boton_primario, boton_secundario, configurar_estilo_treeview,
     barra_titulo_ventana, linea_separadora,
@@ -26,11 +27,11 @@ class VentanaDestino(tk.Toplevel):
         super().__init__(master)
 
         self.title("Destinos")
-        self.geometry("760x560")
+        ajustar_geometria_ventana(self, 760, 560, 640, 420)
         self.resizable(True, True)
         self.configure(bg=CHROME)
 
-        # Contador simple para ir asignando el ID automÃ¡ticamente
+        # Contador simple para ir asignando el ID automáticamente
         # (empieza en 1 y sube de uno en uno con cada destino agregado)
         self.siguiente_id = 1
 
@@ -47,7 +48,7 @@ class VentanaDestino(tk.Toplevel):
         encabezado.pack(fill="x", pady=(0, 12))
         tk.Label(encabezado, text="Destinos y puntos de entrega", font=FUENTE_SUBTITULO,
                  fg=INK, bg=CHROME).pack(side="left")
-        tk.Label(encabezado, text="Principal â€º Destinos", font=("Segoe UI", 9),
+        tk.Label(encabezado, text="Principal › Destinos", font=("Segoe UI", 9),
                  fg=GRAY, bg=CHROME).pack(side="right")
 
         tarjeta = tk.Frame(cuerpo, bg=WHITE, highlightbackground=CHROME_LINE,
@@ -55,29 +56,33 @@ class VentanaDestino(tk.Toplevel):
         tarjeta.pack(fill="both", expand=True)
 
         estilo_tabla = configurar_estilo_treeview("Destinos.Treeview")
+        scrollbar = ttk.Scrollbar(tarjeta, orient="vertical")
+        scrollbar.pack(side="right", fill="y", padx=(0, 12), pady=12)
         self.tabla = ttk.Treeview(
             tarjeta,
             columns=("Nombre", "ID"),
             show="headings",
-            height=14,
+            height=8,
+            yscrollcommand=scrollbar.set,
             style=estilo_tabla,
         )
         self.tabla.heading("Nombre", text="Nombre")
         self.tabla.heading("ID", text="ID")
         self.tabla.column("Nombre", width=280, anchor="center")
         self.tabla.column("ID", width=120, anchor="center")
-        self.tabla.pack(fill="both", expand=True, padx=12, pady=12)
+        self.tabla.pack(side="left", fill="both", expand=True, padx=(12, 0), pady=12)
+        scrollbar.config(command=self.tabla.yview)
 
         botones = tk.Frame(cuerpo, bg=CHROME)
         botones.pack(fill="x", pady=(14, 0))
 
-        boton_primario(botones, "âž•  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
+        boton_primario(botones, "+  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "ðŸ—‘  Eliminar", self.eliminar, ancho=14).pack(
+        boton_secundario(botones, "Eliminar", self.eliminar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "ðŸ”„  Actualizar", self.actualizar, ancho=14).pack(
+        boton_secundario(botones, "Actualizar", self.actualizar, ancho=14).pack(
             side="left"
         )
 
@@ -113,7 +118,7 @@ class VentanaDestino(tk.Toplevel):
     def abrir_ventana_agregar(self):
         ventana = tk.Toplevel(self)
         ventana.title("Agregar destino")
-        ventana.geometry("360x230")
+        ajustar_geometria_ventana(ventana, 360, 230, 320, 200)
         ventana.resizable(False, False)
         ventana.configure(bg=CHROME)
         barra_titulo_ventana(ventana, "Agregar destino")
@@ -169,7 +174,7 @@ class VentanaDestino(tk.Toplevel):
             )
 
     # ------------------------------------------------------------------
-    # ELIMINAR (por selecciÃ³n, o por ID si no hay nada seleccionado)
+    # ELIMINAR (por selección, o por ID si no hay nada seleccionado)
     # ------------------------------------------------------------------
     def eliminar(self):
         seleccionado = self.tabla.selection()
@@ -184,7 +189,7 @@ class VentanaDestino(tk.Toplevel):
     def abrir_ventana_eliminar_por_id(self):
         ventana = tk.Toplevel(self)
         ventana.title("Eliminar destino")
-        ventana.geometry("360x220")
+        ajustar_geometria_ventana(ventana, 360, 220, 320, 200)
         ventana.resizable(False, False)
         ventana.configure(bg=CHROME)
         barra_titulo_ventana(ventana, "Eliminar destino")
@@ -227,7 +232,7 @@ class VentanaDestino(tk.Toplevel):
 
         messagebox.showwarning(
             "Destino",
-            f"No se encontrÃ³ ningÃºn destino con el ID '{id_buscado}'."
+            f"No se encontró ningún destino con el ID '{id_buscado}'."
         )
 
     def eliminar_destino(self, id_destino):

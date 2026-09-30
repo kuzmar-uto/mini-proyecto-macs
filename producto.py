@@ -3,15 +3,15 @@
  PRODUCTOS - MACS COL
 ================================================================================
 
-Este mÃ³dulo gestiona los productos de MACS COL, con el mismo diseÃ±o "software
+Este módulo gestiona los productos de MACS COL, con el mismo diseño "software
 de escritorio" (mockup: macscol_app_menu_escritorio.html) que usan Principal
-y las demÃ¡s ventanas de la aplicaciÃ³n. Los colores, fuentes y helpers viven
+y las demás ventanas de la aplicación. Los colores, fuentes y helpers viven
 en estilo.py.
 
 Los datos se almacenan de forma permanente en SQLite mediante:
     almacenamiento.py
 
-La informaciÃ³n se guarda en:
+La información se guarda en:
     datos/macscol.db
 
 Funciones principales:
@@ -29,6 +29,7 @@ from tkinter import ttk, messagebox
 from almacenamiento import obtener_conexion
 from estilo import (
     CHROME, CHROME_LINE, NAVY, NAVY_DEEP, ACCENT, ACCENT_BG, INK, GRAY, WHITE,
+    ajustar_geometria_ventana,
     FUENTE_SUBTITULO, FUENTE_ETIQUETA, FUENTE_TEXTO,
     boton_primario, boton_secundario, configurar_estilo_treeview,
     barra_titulo_ventana, linea_separadora,
@@ -45,7 +46,7 @@ class VentanaProducto(tk.Toplevel):
         super().__init__(master)
 
         self.title("Productos")
-        self.geometry("980x580")
+        ajustar_geometria_ventana(self, 980, 580, 700, 440)
         self.resizable(True, True)
         self.configure(bg=CHROME)
 
@@ -64,9 +65,9 @@ class VentanaProducto(tk.Toplevel):
 
         encabezado = tk.Frame(cuerpo, bg=CHROME)
         encabezado.pack(fill="x", pady=(0, 12))
-        tk.Label(encabezado, text="CatÃ¡logo de productos", font=FUENTE_SUBTITULO,
+        tk.Label(encabezado, text="Catálogo de productos", font=FUENTE_SUBTITULO,
                  fg=INK, bg=CHROME).pack(side="left")
-        tk.Label(encabezado, text="Principal â€º Productos", font=("Segoe UI", 9),
+        tk.Label(encabezado, text="Principal › Productos", font=("Segoe UI", 9),
                  fg=GRAY, bg=CHROME).pack(side="right")
 
         # ---- Tarjeta con la tabla ----
@@ -74,14 +75,17 @@ class VentanaProducto(tk.Toplevel):
                             highlightthickness=1)
         tarjeta.pack(fill="both", expand=True)
 
-        columnas = ("ID", "Nombre", "Embalaje", "Peso Canastilla (KG)", "DescripciÃ³n")
+        columnas = ("ID", "Nombre", "Embalaje", "Peso Canastilla (KG)", "Descripción")
 
         estilo_tabla = configurar_estilo_treeview("Productos.Treeview")
+        scrollbar = ttk.Scrollbar(tarjeta, orient="vertical")
+        scrollbar.pack(side="right", fill="y", padx=(0, 12), pady=12)
         self.tabla = ttk.Treeview(
             tarjeta,
             columns=columnas,
             show="headings",
-            height=13,
+            height=8,
+            yscrollcommand=scrollbar.set,
             style=estilo_tabla,
         )
 
@@ -89,27 +93,28 @@ class VentanaProducto(tk.Toplevel):
         self.tabla.heading("Nombre", text="Nombre")
         self.tabla.heading("Embalaje", text="Embalaje")
         self.tabla.heading("Peso Canastilla (KG)", text="Peso Canastilla (KG)")
-        self.tabla.heading("DescripciÃ³n", text="DescripciÃ³n")
+        self.tabla.heading("Descripción", text="Descripción")
 
         self.tabla.column("ID", width=60, anchor="center")
         self.tabla.column("Nombre", width=170, anchor="center")
         self.tabla.column("Embalaje", width=130, anchor="center")
         self.tabla.column("Peso Canastilla (KG)", width=160, anchor="center")
-        self.tabla.column("DescripciÃ³n", width=300, anchor="center")
+        self.tabla.column("Descripción", width=300, anchor="center")
 
-        self.tabla.pack(fill="both", expand=True, padx=12, pady=12)
+        self.tabla.pack(side="left", fill="both", expand=True, padx=(12, 0), pady=12)
+        scrollbar.config(command=self.tabla.yview)
 
         # ---- Barra de acciones ----
         botones = tk.Frame(cuerpo, bg=CHROME)
         botones.pack(fill="x", pady=(14, 0))
 
-        boton_primario(botones, "âž•  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
+        boton_primario(botones, "+  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "ðŸ—‘  Eliminar", self.eliminar, ancho=14).pack(
+        boton_secundario(botones, "Eliminar", self.eliminar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "ðŸ”„  Actualizar", self.actualizar, ancho=14).pack(
+        boton_secundario(botones, "Actualizar", self.actualizar, ancho=14).pack(
             side="left"
         )
 
@@ -157,7 +162,7 @@ class VentanaProducto(tk.Toplevel):
     def abrir_ventana_agregar(self):
         ventana = tk.Toplevel(self)
         ventana.title("Agregar producto")
-        ventana.geometry("380x480")
+        ajustar_geometria_ventana(ventana, 380, 480, 340, 400)
         ventana.resizable(False, False)
         ventana.configure(bg=CHROME)
         barra_titulo_ventana(ventana, "Agregar producto")
@@ -165,7 +170,7 @@ class VentanaProducto(tk.Toplevel):
         contenido = tk.Frame(ventana, bg=CHROME)
         contenido.pack(fill="both", expand=True, padx=22, pady=18)
 
-        tk.Label(contenido, text="El ID se asigna automÃ¡ticamente al guardar.",
+        tk.Label(contenido, text="El ID se asigna automáticamente al guardar.",
                  font=("Segoe UI", 9), fg=GRAY, bg=CHROME).pack(anchor="w", pady=(0, 10))
 
         tk.Label(contenido, text="Nombre:", font=FUENTE_ETIQUETA, fg=INK,
@@ -187,7 +192,7 @@ class VentanaProducto(tk.Toplevel):
                                  highlightbackground=CHROME_LINE, bd=1)
         entrada_peso.pack(fill="x", ipady=4)
 
-        tk.Label(contenido, text="DescripciÃ³n:", font=FUENTE_ETIQUETA, fg=INK,
+        tk.Label(contenido, text="Descripción:", font=FUENTE_ETIQUETA, fg=INK,
                  bg=CHROME).pack(anchor="w", pady=(12, 4))
         entrada_descripcion = tk.Entry(contenido, width=30, font=FUENTE_TEXTO, relief="solid",
                                         highlightbackground=CHROME_LINE, bd=1)
@@ -234,7 +239,7 @@ class VentanaProducto(tk.Toplevel):
         except ValueError:
             messagebox.showwarning(
                 "Producto",
-                "El peso debe ser un nÃºmero vÃ¡lido.\n\nEjemplo: 10.5"
+                "El peso debe ser un número válido.\n\nEjemplo: 10.5"
             )
             return
 
@@ -299,7 +304,7 @@ class VentanaProducto(tk.Toplevel):
 
             confirmar = messagebox.askyesno(
                 "Eliminar producto",
-                f"Â¿Seguro que deseas eliminar el producto:\n\n"
+                f"¿Seguro que deseas eliminar el producto:\n\n"
                 f"{nombre_producto}\n"
                 f"ID: {id_producto}?"
             )
@@ -310,7 +315,7 @@ class VentanaProducto(tk.Toplevel):
             self.eliminar_producto_por_id(id_producto)
             return
 
-        # Si no hay selecciÃ³n, buscar por ID
+        # Si no hay selección, buscar por ID
         self.abrir_ventana_eliminar_por_id()
 
     # ==========================================================================
@@ -320,7 +325,7 @@ class VentanaProducto(tk.Toplevel):
     def abrir_ventana_eliminar_por_id(self):
         ventana = tk.Toplevel(self)
         ventana.title("Eliminar producto")
-        ventana.geometry("360x220")
+        ajustar_geometria_ventana(ventana, 360, 220, 320, 200)
         ventana.resizable(False, False)
         ventana.configure(bg=CHROME)
         barra_titulo_ventana(ventana, "Eliminar producto")
@@ -377,7 +382,7 @@ class VentanaProducto(tk.Toplevel):
             if filas_eliminadas == 0:
                 messagebox.showwarning(
                     "Producto",
-                    f"No se encontrÃ³ ningÃºn producto con el ID '{id_buscado}'."
+                    f"No se encontró ningún producto con el ID '{id_buscado}'."
                 )
                 return
 
@@ -416,7 +421,7 @@ class VentanaProducto(tk.Toplevel):
             if filas_eliminadas == 0:
                 messagebox.showwarning(
                     "Producto",
-                    f"No se encontrÃ³ ningÃºn producto con el ID '{id_producto}'."
+                    f"No se encontró ningún producto con el ID '{id_producto}'."
                 )
                 return
 
@@ -450,7 +455,7 @@ class VentanaProducto(tk.Toplevel):
 
 
 # ==============================================================================
-# EJECUCIÃ“N DIRECTA
+# EJECUCIÓN DIRECTA
 # ==============================================================================
 
 if __name__ == "__main__":

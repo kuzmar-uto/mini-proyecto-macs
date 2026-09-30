@@ -25,6 +25,7 @@ from tkinter import messagebox
 from estilo import (
     CHROME, CHROME_LINE, NAVY, NAVY_DEEP, ACCENT, ACCENT_BG, INK, GRAY,
     WHITE, fecha_corta_en_espanol, linea_separadora,
+    ajustar_geometria_ventana,
 )
 
 from producto import VentanaProducto
@@ -42,25 +43,15 @@ RUTA_LOGO = os.path.join(os.path.dirname(__file__), "logo_macscol.png")
 # clave -> (título, ícono, descripción para la tarjeta, contador demo)
 # ------------------------------------------------------------------
 MODULOS = {
-    "Vehiculo":  ("Vehículos",   "🚚", "Placa y capacidad de la flota.",              "18 registrados"),
-    "Destino":   ("Destinos",    "📍", "Ciudades y puntos de entrega.",               "32 registrados"),
-    "Cliente":   ("Clientes",    "👤", "Nombre e identificación.",                    "156 registrados"),
-    "Producto":  ("Productos",   "📦", "Embalaje, peso y descripción.",               "64 registrados"),
-    "Conductor": ("Conductores", "🧑", "Cédula, nombre y teléfono.",                  "27 registrados"),
-    "Pedido":    ("Pedidos",     "📋", "Selecciona cliente, productos, vehículo y ruta para despachar.", "312 planillas este mes"),
+    "Vehiculo":  ("Vehículos",   "🚚", "Placa y capacidad de la flota.",              ""),
+    "Destino":   ("Destinos",    "📍", "Ciudades y puntos de entrega.",               ""),
+    "Cliente":   ("Clientes",    "👤", "Nombre e identificación.",                    ""),
+    "Producto":  ("Productos",   "📦", "Embalaje, peso y descripción.",               ""),
+    "Conductor": ("Conductores", "🧑", "Cédula, nombre y teléfono.",                  ""),
+    "Pedido":    ("Pedidos",     "📋", "Selecciona cliente, productos, vehículo y ruta para despachar.", ""),
 }
 
-ACTIVIDAD_RECIENTE = [
-
-# funcion que se le puede añadir despues esto es un place holder #
-
-
-    ("09:41", "Planilla N.° 312 guardada."),
-    ("09:22", "Vehículo agregado a la flota."),
-    ("08:57", "Conductor registrado."),
-    ("08:30", "Destino agregado."),
-    ("Ayer", "Producto actualizado."),
-]
+ACTIVIDAD_RECIENTE = []
 
 
 class InterfazPrincipal(tk.Tk):
@@ -70,11 +61,8 @@ class InterfazPrincipal(tk.Tk):
         # ---------------- Ventana principal ----------------
         self.title("Principal — MACS COL")
         # Inicia dentro del área visible incluso en pantallas pequeñas.
-        ancho = min(1150, max(640, self.winfo_screenwidth() - 80))
-        alto = min(700, max(450, self.winfo_screenheight() - 100))
-        self.geometry(f"{ancho}x{alto}")
+        ajustar_geometria_ventana(self, 1150, 700, 640, 450)
         self.configure(bg=CHROME)
-        self.minsize(640, 450)
 
         self.items_nav = {}   # clave del módulo -> widgets de su fila en el nav
         self.item_activo = "Inicio"
@@ -133,18 +121,19 @@ class InterfazPrincipal(tk.Tk):
         contenido = tk.Frame(toolbar, bg=WHITE)
         contenido.pack(side="left", fill="y", padx=12)
 
-        self._boton_toolbar(contenido, "➕  Nuevo pedido", lambda: self._abrir_modulo("Pedido"),
+        self._boton_toolbar(contenido, "Nuevo pedido", lambda: self._abrir_modulo("Pedido"),
                              destacado=True).pack(side="left", padx=(0, 12), pady=8)
 
         tk.Frame(contenido, bg=CHROME_LINE, width=1).pack(side="left", fill="y", pady=10, padx=6)
 
-        self._boton_toolbar(contenido, "🔄  Actualizar", self._actualizar).pack(side="left", padx=6, pady=8)
-        self._boton_toolbar(contenido, "🧾  Planillas", lambda: self._abrir_modulo("Pedido")).pack(side="left", padx=6, pady=8)
-        self._boton_toolbar(contenido, "📊  Reportes", self._reportes).pack(side="left", padx=6, pady=8)
+        self._boton_toolbar(contenido, "Actualizar", self._actualizar).pack(side="left", padx=6, pady=8)
+        self._boton_toolbar(contenido, "Planillas", lambda: self._abrir_modulo("Pedido")).pack(side="left", padx=6, pady=8)
+        self._boton_toolbar(contenido, "Reportes", self._reportes).pack(side="left", padx=6, pady=8)
 
         # ---- Buscador a la derecha ----
         buscador = tk.Frame(toolbar, bg=CHROME, highlightbackground=CHROME_LINE,
                              highlightthickness=1)
+        self._buscador_toolbar = buscador
         buscador.pack(side="right", padx=16, pady=13)
 
         tk.Label(buscador, text="🔍", bg=CHROME, fg=GRAY).pack(side="left", padx=(8, 2))
@@ -293,7 +282,7 @@ class InterfazPrincipal(tk.Tk):
 
         # Tarjeta "Reportes" (informativa, junto a las demás)
         self._crear_tile(tiles, None, "Reportes", "📊", "Resumen de despachos por mes.",
-                          "Julio 2026", comando=self._reportes).grid(
+                          "Septiembre 2026", comando=self._reportes).grid(
             row=fila, column=col, padx=6, pady=6, sticky="nsew"
         )
         col += 1
@@ -343,6 +332,10 @@ class InterfazPrincipal(tk.Tk):
             return
         ancho = self.winfo_width()
         compacto = ancho < 900
+        if compacto and self._buscador_toolbar.winfo_manager():
+            self._buscador_toolbar.pack_forget()
+        elif not compacto and not self._buscador_toolbar.winfo_manager():
+            self._buscador_toolbar.pack(side="right", padx=16, pady=13)
         if compacto:
             self._actividad.pack_forget()
             self._panel_principal.pack_configure(padx=12, pady=12)
@@ -477,3 +470,7 @@ if __name__ == "__main__":
     crear_base_datos()
     app = InterfazPrincipal()
     app.mainloop()
+
+
+
+

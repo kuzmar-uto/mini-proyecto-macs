@@ -3,15 +3,15 @@
  CLIENTES - MACS COL
 ================================================================================
 
-Este mÃ³dulo gestiona los clientes de MACS COL, con el mismo diseÃ±o "software
+Este módulo gestiona los clientes de MACS COL, con el mismo diseño "software
 de escritorio" (mockup: macscol_app_menu_escritorio.html) que usan Principal
-y las demÃ¡s ventanas de la aplicaciÃ³n. Los colores, fuentes y helpers viven
+y las demás ventanas de la aplicación. Los colores, fuentes y helpers viven
 en estilo.py.
 
 Los datos se almacenan de forma permanente en SQLite mediante:
     almacenamiento.py
 
-La informaciÃ³n se guarda en:
+La información se guarda en:
     datos/macscol.db
 
 Funciones principales:
@@ -28,6 +28,7 @@ from tkinter import ttk, messagebox
 from almacenamiento import obtener_conexion
 from estilo import (
     CHROME, CHROME_LINE, NAVY, NAVY_DEEP, ACCENT, ACCENT_BG, INK, GRAY, WHITE,
+    ajustar_geometria_ventana,
     FUENTE_SUBTITULO, FUENTE_ETIQUETA, FUENTE_TEXTO,
     boton_primario, boton_secundario, configurar_estilo_treeview,
     barra_titulo_ventana, linea_separadora,
@@ -44,7 +45,7 @@ class VentanaCliente(tk.Toplevel):
         super().__init__(master)
 
         self.title("Clientes")
-        self.geometry("760x560")
+        ajustar_geometria_ventana(self, 760, 560, 640, 420)
         self.resizable(True, True)
         self.configure(bg=CHROME)
 
@@ -65,7 +66,7 @@ class VentanaCliente(tk.Toplevel):
         encabezado.pack(fill="x", pady=(0, 12))
         tk.Label(encabezado, text="Clientes registrados", font=FUENTE_SUBTITULO,
                  fg=INK, bg=CHROME).pack(side="left")
-        tk.Label(encabezado, text="Principal â€º Clientes", font=("Segoe UI", 9),
+        tk.Label(encabezado, text="Principal › Clientes", font=("Segoe UI", 9),
                  fg=GRAY, bg=CHROME).pack(side="right")
 
         # ---- Tarjeta con la tabla ----
@@ -85,7 +86,7 @@ class VentanaCliente(tk.Toplevel):
             columns=("id", "nombre"),
             show="headings",
             yscrollcommand=scrollbar.set,
-            height=15,
+            height=8,
             style=estilo_tabla,
         )
         self.tabla.heading("id", text="ID")
@@ -100,13 +101,13 @@ class VentanaCliente(tk.Toplevel):
         botones = tk.Frame(cuerpo, bg=CHROME)
         botones.pack(fill="x", pady=(14, 0))
 
-        boton_primario(botones, "âž•  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
+        boton_primario(botones, "+  Agregar", self.abrir_ventana_agregar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "ðŸ—‘  Eliminar", self.eliminar, ancho=14).pack(
+        boton_secundario(botones, "Eliminar", self.eliminar, ancho=14).pack(
             side="left", padx=(0, 10)
         )
-        boton_secundario(botones, "ðŸ”„  Actualizar", self.actualizar, ancho=14).pack(
+        boton_secundario(botones, "Actualizar", self.actualizar, ancho=14).pack(
             side="left"
         )
 
@@ -151,7 +152,7 @@ class VentanaCliente(tk.Toplevel):
     def abrir_ventana_agregar(self):
         ventana = tk.Toplevel(self)
         ventana.title("Agregar cliente")
-        ventana.geometry("360x230")
+        ajustar_geometria_ventana(ventana, 360, 230, 320, 200)
         ventana.resizable(False, False)
         ventana.configure(bg=CHROME)
         barra_titulo_ventana(ventana, "Agregar cliente")
@@ -199,7 +200,7 @@ class VentanaCliente(tk.Toplevel):
             conexion = obtener_conexion()
             cursor = conexion.cursor()
 
-            # No enviamos el ID: SQLite lo genera automÃ¡ticamente gracias a
+            # No enviamos el ID: SQLite lo genera automáticamente gracias a
             # "id INTEGER PRIMARY KEY AUTOINCREMENT".
             cursor.execute(
                 "INSERT INTO clientes (nombre) VALUES (?)",
@@ -248,7 +249,7 @@ class VentanaCliente(tk.Toplevel):
 
         confirmar = messagebox.askyesno(
             "Eliminar cliente",
-            f"Â¿Seguro que deseas eliminar al cliente:\n\n"
+            f"¿Seguro que deseas eliminar al cliente:\n\n"
             f"{nombre_cliente}?"
         )
 
@@ -297,7 +298,7 @@ class VentanaCliente(tk.Toplevel):
 
 
 # ==============================================================================
-# EJECUCIÃ“N DIRECTA
+# EJECUCIÓN DIRECTA
 # ==============================================================================
 
 if __name__ == "__main__":

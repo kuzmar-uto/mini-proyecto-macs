@@ -150,6 +150,22 @@ def configurar_estilo_treeview(nombre_estilo="Macscol.Treeview"):
     return nombre_estilo
 
 
+
+def ajustar_geometria_ventana(ventana, ancho, alto, min_ancho=320, min_alto=220):
+    """Centra la ventana y limita su tama?o al ?rea visible de la pantalla."""
+    ventana.update_idletasks()
+    pantalla_ancho = ventana.winfo_screenwidth()
+    pantalla_alto = ventana.winfo_screenheight()
+    disponible_ancho = max(320, pantalla_ancho - 40)
+    disponible_alto = max(240, pantalla_alto - 80)
+    ancho = min(ancho, disponible_ancho)
+    alto = min(alto, disponible_alto)
+    x = max((pantalla_ancho - ancho) // 2, 0)
+    y = max((pantalla_alto - alto) // 2, 0)
+    ventana.geometry(f"{ancho}x{alto}+{x}+{y}")
+    ventana.minsize(min(min_ancho, ancho), min(min_alto, alto))
+
+
 def barra_titulo_ventana(ventana, texto):
     """
     Barra superior azul marino oscuro con el nombre de la sección (como el

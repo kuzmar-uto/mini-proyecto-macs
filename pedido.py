@@ -5,9 +5,11 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import date
 import os
+import subprocess
+import sys
 from contextlib import closing
 
-from almacenamiento import obtener_conexion
+from almacenamiento import obtener_conexion, obtener_datos_planilla
 
 # ------------------------------------------------------------------
 # Paleta de colores (tomada del HTML de referencia
@@ -84,13 +86,14 @@ class VentanaAgregarPedido(tk.Toplevel):
         # ----------------------------------------------------------------
         ancho_pantalla = self.winfo_screenwidth()
         alto_pantalla = self.winfo_screenheight()
-        ancho_ventana = min(1200, max(900, ancho_pantalla - 40))
-        alto_ventana = min(950, max(680, alto_pantalla - 60))
-        pos_x = (ancho_pantalla - ancho_ventana) // 2
-        pos_y = max((alto_pantalla - alto_ventana) // 2 - 20, 0)
+        ancho_ventana = min(1200, max(320, ancho_pantalla - 40))
+        alto_ventana = min(700, max(240, alto_pantalla - 80))
+        pos_x = max((ancho_pantalla - ancho_ventana) // 2, 0)
+        pos_y = max((alto_pantalla - alto_ventana) // 2, 0)
         self.geometry(f"{ancho_ventana}x{alto_ventana}+{pos_x}+{pos_y}")
-        self.minsize(900, 650)
+        self.minsize(min(700, ancho_ventana), min(500, alto_ventana))
         self.resizable(True, True)
+        self._escala_tk_base = float(self.tk.call("tk", "scaling"))
         self.configure(bg=COLOR_CHROME)
 
         # Número de planilla (se incrementa cada vez que se guarda un pedido)
@@ -246,6 +249,44 @@ class VentanaAgregarPedido(tk.Toplevel):
         # herramientas / encabezado en el HTML de referencia.
         separador = tk.Frame(self, bg=COLOR_CHROME_LINE, height=1)
         separador.pack(fill="x", padx=0, pady=(14, 0))
+        self.bind("<Configure>", self._ajustar_diseno_responsivo)
+        self.after_idle(self._ajustar_diseno_responsivo)
+
+
+    def _ajustar_diseno_responsivo(self, event=None):
+        """Escala la distribuci?n absoluta del formulario al ?rea visible."""
+        if event is not None and event.widget is not self:
+            return
+        if not hasattr(self, "_geometrias_base"):
+            self._geometrias_base = {}
+            pendientes = list(self.winfo_children())
+            while pendientes:
+                widget = pendientes.pop()
+                pendientes.extend(widget.winfo_children())
+                if widget.winfo_manager() == "place":
+                    info = widget.place_info()
+                    self._geometrias_base[widget] = {
+                        clave: info.get(clave, "0")
+                        for clave in ("x", "y", "width", "height")
+                    }
+        ancho = max(self.winfo_width(), 1)
+        alto = max(self.winfo_height(), 1)
+        escala = min(ancho / 1200, alto / 700, 1.0)
+        self.tk.call("tk", "scaling", self._escala_tk_base * escala)
+        desplazamiento_x = max((ancho - 1200 * escala) // 2, 0)
+        for widget, base in self._geometrias_base.items():
+            try:
+                x = round(int(base["x"]) * escala)
+                y = round(int(base["y"]) * escala)
+                if widget.master is self:
+                    x += desplazamiento_x
+                widget.place_configure(
+                    x=x, y=y,
+                    width=max(1, round(int(base["width"]) * escala)),
+                    height=max(1, round(int(base["height"]) * escala)),
+                )
+            except (tk.TclError, ValueError):
+                continue
 
     # ------------------------------------------------------------------
     # PANEL IZQUIERDO: Cliente / Producto / Cantidad (dentro de un recuadro)
@@ -533,7 +574,17 @@ class VentanaAgregarPedido(tk.Toplevel):
             font=("Segoe UI", 16, "bold"),
             width=14,
             command=self.guardar_pedido,
-        ).place(x=880, y=25)
+        ).place(x=880, y=0)
+
+        tk.Button(
+            frame,
+            text="Generar Planilla (ruta)",
+            bg=COLOR_ACCENT,
+            fg="white",
+            font=FUENTE_BOTON,
+            width=18,
+            command=self.generar_planilla_ruta,
+        ).place(x=880, y=55)
 
     # ------------------------------------------------------------------
     # ACCIONES
@@ -637,7 +688,7 @@ class VentanaAgregarPedido(tk.Toplevel):
 
         planilla_creada = False
         try:
-            from c import generar_planilla_despacho
+            from generar_planilla import generar_planilla_despacho
 
             carpeta_proyecto = os.path.dirname(os.path.abspath(__file__))
             carpeta_planillas = os.path.join(carpeta_proyecto, "planillas")
@@ -651,9 +702,17 @@ class VentanaAgregarPedido(tk.Toplevel):
                 }
                 for item in self.items_pedido_actual
             ]
+            encabezado_planilla = {
+                "vehiculo": vehiculo,
+                "destino": destino.split(" - ", 1)[-1] if destino else "",
+                "conductor": conductor.split(" - ", 1)[-1] if conductor else "",
+                "fecha": fecha,
+                "numero_ruta": numero_ruta or "",
+                "numero_planilla": id_pedido,
+            }
             plantilla = os.path.join(carpeta_proyecto, "17092026EYZ9456262F PASTO.docx")
             archivo_planilla = os.path.join(carpeta_planillas, f"planilla_{id_pedido}.docx")
-            generar_planilla_despacho(filas_planilla, plantilla, archivo_planilla)
+            generar_planilla_despacho(filas_planilla, plantilla, archivo_planilla, encabezado_planilla)
             planilla_creada = True
         except Exception as error:
             messagebox.showwarning(
@@ -707,6 +766,68 @@ class VentanaAgregarPedido(tk.Toplevel):
                 "Pedido", f"Se eliminó el pedido No {id_buscado} de la base de datos."
             )
         self.entrada_id_eliminar.delete(0, "end")
+
+    def generar_planilla_ruta(self):
+        """
+        Genera UNA sola Planilla de Despacho con TODOS los pedidos (de
+        distintos clientes) que compartan el numero de ruta escrito en
+        'Número de ruta'. A diferencia de la planilla que se crea sola al
+        Guardar (que solo lleva el pedido que se acaba de guardar), esta
+        junta toda la ruta en una sola hoja -- una fila por cliente, tal
+        como el formato fisico.
+        """
+        numero_ruta = self.entrada_numero_ruta.get().strip()
+        if not numero_ruta:
+            messagebox.showwarning(
+                "Planilla", "Escribe el Número de ruta de la planilla que quieres generar."
+            )
+            return
+
+        try:
+            encabezado, filas = obtener_datos_planilla(numero_ruta)
+        except Exception as error:
+            messagebox.showerror("Error", f"No se pudieron leer los pedidos de la ruta:\n\n{error}")
+            return
+
+        if not filas:
+            messagebox.showwarning(
+                "Planilla", f"No hay pedidos guardados para la ruta '{numero_ruta}'."
+            )
+            return
+
+        encabezado["numero_planilla"] = numero_ruta
+
+        from generar_planilla import generar_planilla_despacho
+
+        carpeta_proyecto = os.path.dirname(os.path.abspath(__file__))
+        carpeta_planillas = os.path.join(carpeta_proyecto, "planillas")
+        os.makedirs(carpeta_planillas, exist_ok=True)
+        plantilla = os.path.join(carpeta_proyecto, "17092026EYZ9456262F PASTO.docx")
+        archivo_planilla = os.path.join(carpeta_planillas, f"planilla_ruta_{numero_ruta}.docx")
+
+        try:
+            generar_planilla_despacho(filas, plantilla, archivo_planilla, encabezado)
+        except Exception as error:
+            messagebox.showerror("Error", f"No se pudo generar la planilla:\n\n{error}")
+            return
+
+        messagebox.showinfo(
+            "Planilla", f"Planilla de la ruta '{numero_ruta}' generada en:\n{archivo_planilla}"
+        )
+        self._abrir_archivo(archivo_planilla)
+
+    @staticmethod
+    def _abrir_archivo(ruta):
+        """Abre el .docx generado con la aplicacion asociada del sistema."""
+        try:
+            if sys.platform.startswith("win"):
+                os.startfile(ruta)  # type: ignore[attr-defined]
+            elif sys.platform == "darwin":
+                subprocess.run(["open", ruta], check=False)
+            else:
+                subprocess.run(["xdg-open", ruta], check=False)
+        except Exception:
+            pass  # si no se puede abrir solo, el archivo ya quedo guardado
 
     def actualizar(self):
         seleccion = self.tabla_pedidos.selection()

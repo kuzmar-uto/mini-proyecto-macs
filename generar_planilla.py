@@ -1,35 +1,3 @@
-"""
-generar_planilla.py
---------------------
-Genera la "Planilla de Despacho" (.docx) de MACS COL a partir de la plantilla
-oficial, ajustando automaticamente el numero de filas de las tablas segun la
-cantidad de lineas (productos/clientes) que traiga el pedido/ruta.
-
-Uso tipico desde el programa (por ejemplo un boton "Imprimir planilla" en
-pedido.py):
-
-    from generar_planilla import generar_planilla_despacho
-
-    filas = [
-        {"cliente": "Panaderia El Trigal", "producto": "Pan tajado",
-         "cantidad": 10, "agregado": "", "no_envio": "", "consumo": "",
-         "devolucion": "", "remision": "REM-0456"},
-        {"cliente": "Tienda Naturales", "producto": "Arepa",
-         "cantidad": 5, "agregado": "", "no_envio": "", "consumo": "",
-         "devolucion": "", "remision": "REM-0457"},
-        # ... una fila por cada linea de despacho, sin importar si son 1 o 40
-    ]
-
-    generar_planilla_despacho(
-        filas=filas,
-        plantilla="17092026EYZ9456262F_PASTO.docx",
-        salida="planilla_ruta_pasto.docx",
-    )
-
-La funcion NO depende de Tkinter ni de sqlite3: recibe listas de diccionarios
-ya armadas, para que se pueda conectar facilmente con almacenamiento.py
-(basta con hacer el SELECT/JOIN correspondiente y mapear los campos).
-"""
 
 from copy import deepcopy
 from collections import OrderedDict
