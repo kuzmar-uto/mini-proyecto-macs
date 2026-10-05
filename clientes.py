@@ -3,14 +3,6 @@
  CLIENTES - MACS COL
 ================================================================================
 
-Este módulo gestiona los clientes de MACS COL, con el mismo diseño "software
-de escritorio" (mockup: macscol_app_menu_escritorio.html) que usan Principal
-y las demás ventanas de la aplicación. Los colores, fuentes y helpers viven
-en estilo.py.
-
-Los datos se almacenan de forma permanente en SQLite mediante:
-    almacenamiento.py
-
 La información se guarda en:
     datos/macscol.db
 

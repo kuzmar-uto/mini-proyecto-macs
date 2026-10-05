@@ -1,23 +1,8 @@
 """
 ================================================================================
- ESTILO VISUAL COMPARTIDO - MACS COL
+ ESTILOS
 ================================================================================
-Paleta de colores, fuentes y pequeños "helpers" que usan TODAS las ventanas
-de la aplicación (principal, vehiculo, destino, cliente, producto, conductor,
-pedido), para que se vean como un solo programa.
 
-Estos valores se tomaron directamente de las variables CSS del mockup
-"macscol_app_menu_escritorio.html" (estilo software de escritorio: barra de
-menú, barra de herramientas, panel de navegación, tarjetas y barra de
-estado), para que la app en Tkinter se vea igual que ese diseño.
-
-Cada ventana solo necesita hacer:
-
-    from estilo import *
-
-y ya tiene disponibles los colores (CHROME, NAVY, ACCENT, ...), las fuentes
-(FUENTE_TITULO, FUENTE_BOTON, ...) y las funciones de ayuda de aquí abajo.
-================================================================================
 """
 
 import tkinter as tk
@@ -25,22 +10,20 @@ from tkinter import ttk
 from datetime import date
 
 # ------------------------------------------------------------------
-# PALETA DE COLORES (igual a las variables :root del HTML)
+# PALETA DE COLORES
 # ------------------------------------------------------------------
-CHROME ="#FFFFFF"     # gris muy claro -> fondo general de las ventanas
-CHROME_LINE = "#D7D7D3"   # líneas / bordes sutiles
-NAVY = "#0B1F6B"          # azul marino -> color de marca y botones
-NAVY_DEEP = "#071540"     # azul marino oscuro -> barra superior / estado
-ACCENT = "#3B5FC7"        # azul de acento (selección / hover)
-ACCENT_BG = "#E8EDFB"     # azul muy claro (fondo de hover / selección)
-INK = "#1B1D1F"           # texto principal
-GRAY = "#68696A"          # texto secundario
+CHROME ="#FFFFFF"     
+CHROME_LINE = "#D7D7D3"   
+NAVY = "#0B1F6B"          
+NAVY_DEEP = "#071540"     
+ACCENT = "#3B5FC7"        
+ACCENT_BG = "#E8EDFB"     
+INK = "#1B1D1F"           
+GRAY = "#68696A"         
 WHITE = "#FFFFFF"
-DORADO = "#C9932B"        # dorado del "10 años", para detalles puntuales
+DORADO = "#C9932B"    
 
-# Nombres "viejos" que ya usaban vehiculo.py, producto.py, etc. Se dejan
-# apuntando a la paleta nueva para no tener que reescribir cada archivo
-# por completo.
+
 COLOR_FONDO = CHROME
 COLOR_BOTON = NAVY
 COLOR_TEXTO_BOTON = WHITE
@@ -57,7 +40,7 @@ FUENTE_MONO = ("Consolas", 9)
 
 
 # ------------------------------------------------------------------
-# FECHA EN ESPAÑOL (para la barra de estado y otros lugares)
+# FECHA
 # ------------------------------------------------------------------
 DIAS_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 MESES_ES = [
@@ -74,9 +57,17 @@ def fecha_corta_en_espanol():
     return f"{dia} {hoy.day} {mes} {hoy.year}"
 
 
-# ------------------------------------------------------------------
-# HELPERS DE WIDGETS (para que cada ventana se vea igual)
-# ------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
 def boton_primario(parent, texto, comando, ancho=12, font=None):
     """Botón azul marino con texto blanco, como los del mockup."""
     return tk.Button(

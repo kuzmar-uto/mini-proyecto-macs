@@ -1,8 +1,10 @@
 """
-================================================================================
- ALMACENAMIENTO - MACS COL
-================================================================================
+este es el creador de la base de datos aunque la base de datos ya esta en datos/macscoldb.db
+aqui es ta la estructura
 """
+
+
+
 
 import os
 import sqlite3
@@ -16,6 +18,7 @@ RUTA_BASE_DATOS = os.path.join(CARPETA_DATOS, "macscol.db")
 
 
 def obtener_conexion():
+
     """
     Abre y devuelve una conexión con la base de datos.
 
@@ -122,22 +125,6 @@ def crear_base_datos():
         )
     """)
 
-    # --------------------------------------------------------------------------
-    # DETALLE DE PEDIDOS
-    # --------------------------------------------------------------------------
-    #
-    # Un pedido puede contener varios productos.
-    #
-    # Ejemplo:
-    #
-    # Pedido 1
-    #     ├── Producto A -> 10 unidades
-    #     ├── Producto B -> 5 unidades
-    #     └── Producto C -> 3 unidades
-    #
-    # Esta tabla permite guardar cada producto asociado a un pedido.
-    # --------------------------------------------------------------------------
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS detalle_pedido (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,9 +149,7 @@ def crear_base_datos():
     conexion.close()
 
 
-# ==============================================================================
-# DATOS PARA LA PLANILLA DE DESPACHO (por numero de ruta)
-# ==============================================================================
+
 
 def obtener_datos_planilla(numero_ruta):
     """
@@ -229,9 +214,7 @@ def obtener_datos_planilla(numero_ruta):
     return encabezado, filas
 
 
-# ==============================================================================
-# EJECUCIÓN DIRECTA
-# ==============================================================================
+
 
 if __name__ == "__main__":
 

@@ -1,10 +1,16 @@
 ﻿"""
-================================================================================
  DESTINOS - MACS COL
 ================================================================================
-Ventana de gestión de destinos, con el mismo diseño "software de escritorio"
-(mockup: macscol_app_menu_escritorio.html) que usan Principal y las demás
-ventanas de la aplicación. Los colores, fuentes y helpers viven en estilo.py.
+
+La información se guarda en:
+    datos/macscol.db
+
+Funciones principales:
+    - Cargar destinos desde la base de datos.
+    - Agregar nuevos destinos.
+    - Eliminar destinos.
+    - Eliminar por ID.
+    - Actualizar/refrescar la tabla.
 ================================================================================
 """
 

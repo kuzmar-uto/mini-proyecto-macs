@@ -67,7 +67,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         # ID incremental para cada pedido guardado en la tabla de la izquierda
         # Items que se van agregando con "Listar" antes de guardar el pedido
         self.items_pedido_actual = []
-        self.peso_total_actual = 0
+        self.peso_total_actual = 150
         self.clientes = {}
         self.productos = {}
         self.vehiculos = {}
@@ -485,7 +485,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         self.label_planilla.config(text=f"Planilla No {self.numero_planilla}")
 
         self.items_pedido_actual = []
-        self.peso_total_actual = 0
+        self.peso_total_actual = 150
         self.label_peso.config(text=f"Peso {self.peso_total_actual}")
 
         for fila in self.tabla_items.get_children():

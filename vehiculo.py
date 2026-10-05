@@ -2,10 +2,6 @@
 ================================================================================
  VEHÍCULOS - MACS COL
 ================================================================================
-Ventana de gestión de vehículos, con el mismo diseño "software de escritorio"
-(mockup: macscol_app_menu_escritorio.html) que usan Principal y las demás
-ventanas de la aplicación. Los colores, fuentes y helpers viven en estilo.py.
-================================================================================
 """
 
 import tkinter as tk
@@ -184,8 +180,7 @@ class VentanaVehiculo(tk.Toplevel):
     # ELIMINAR
     # ------------------------------------------------------------------
     def eliminar(self):
-        # Caso 1: ya hay una fila seleccionada en la tabla -> se borra
-        # directamente, igual que antes.
+
         seleccionado = self.tabla.selection()
 
         if seleccionado:
@@ -193,8 +188,6 @@ class VentanaVehiculo(tk.Toplevel):
             self.eliminar_vehiculo(valores[0])
             return
 
-        # Caso 2: no hay ninguna fila seleccionada -> se abre una ventana
-        # para buscar y eliminar el vehículo escribiendo su placa.
         self.abrir_ventana_eliminar_por_placa()
 
     def abrir_ventana_eliminar_por_placa(self):

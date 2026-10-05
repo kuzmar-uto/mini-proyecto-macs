@@ -1,32 +1,28 @@
-#esta seccion tiene que estar conectada a el principal por medio del boton de pedido
-# (esta ventana en particular es el formulario "Agregar Pedido")
-
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import date
+import calendar
 import os
 import subprocess
 import sys
+import time
 from contextlib import closing
 
 from almacenamiento import obtener_conexion, obtener_datos_planilla
 
-# ------------------------------------------------------------------
-# Paleta de colores (tomada del HTML de referencia
-# "macscol_app_menu_escritorio.html") para que la app de escritorio
-# se vea consistente con el diseño aprobado.
-# ------------------------------------------------------------------
-COLOR_CHROME = "#F3F3F1"       # fondo general de la ventana
-COLOR_CHROME_LINE = "#D7D7D3"  # bordes / separadores
-COLOR_NAVY = "#0B1F6B"         # color principal (botones, acentos fuertes)
-COLOR_NAVY_DEEP = "#071540"    # títulos / barra oscura
-COLOR_ACCENT = "#3B5FC7"       # resaltados / foco
-COLOR_ACCENT_BG = "#E8EDFB"    # fondo de resaltado suave
-COLOR_INK = "#1B1D1F"          # texto principal
-COLOR_GRAY = "#68696A"         # texto secundario
+
+
+COLOR_CHROME = "#F3F3F1"       
+COLOR_CHROME_LINE = "#D7D7D3"  
+COLOR_NAVY = "#0B1F6B"         
+COLOR_NAVY_DEEP = "#071540"    
+COLOR_ACCENT = "#3B5FC7"       
+COLOR_ACCENT_BG = "#E8EDFB"   
+COLOR_INK = "#1B1D1F"          
+COLOR_GRAY = "#68696A"         
 COLOR_WHITE = "#FFFFFF"
 
-# Alias para no romper referencias anteriores del archivo
+
 COLOR_FONDO = COLOR_CHROME
 COLOR_BOTON = COLOR_NAVY
 
@@ -36,11 +32,7 @@ FUENTE_SUBTITULO = ("Segoe UI", 12, "bold")
 FUENTE_ETIQUETA = ("Segoe UI", 11, "bold")
 FUENTE_ETIQUETA_SUAVE = ("Segoe UI", 10)
 
-# ------------------------------------------------------------------
-# Nombres de días y meses en español (no dependemos del "locale" del
-# sistema operativo, porque en Windows/Linux no siempre está instalado
-# el idioma español; así el formato de fecha nunca falla).
-# ------------------------------------------------------------------
+
 DIAS_ES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 MESES_ES = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -48,28 +40,159 @@ MESES_ES = [
 ]
 
 
+def fecha_en_espanol(fecha):
+    dia_semana = DIAS_ES[fecha.weekday()]
+    mes = MESES_ES[fecha.month - 1]
+    return f"{dia_semana} , {fecha.day} de {mes} de {fecha.year}"
+
+
 def fecha_actual_en_espanol():
-    """Devuelve la fecha de hoy con el formato: 'viernes , 24 de julio de 2026'"""
-    hoy = date.today()
-    dia_semana = DIAS_ES[hoy.weekday()]
-    mes = MESES_ES[hoy.month - 1]
-    return f"{dia_semana} , {hoy.day} de {mes} de {hoy.year}"
+    return fecha_en_espanol(date.today())
 
 
-# ------------------------------------------------------------------
-# NOTA sobre el peso por producto:
-# Todavía no hay una base de datos conectada entre módulos, así que
-# aquí se usa un diccionario de ejemplo (producto -> peso por unidad
-# en KG) solo para poder calcular el "Peso" mientras se arma el
-# pedido. Cuando conectemos Producto con una base de datos real, este
-# diccionario se reemplaza por una consulta al peso real registrado
-# en el módulo Producto ("Peso Canastilla (KG)").
-# ------------------------------------------------------------------
-PESO_UNITARIO_DEMO = {
-    "Producto A": 10,
-    "Producto B": 15,
-    "Producto C": 8,
-}
+DIAS_CORTOS_ES = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"]
+
+
+class SelectorFecha(ttk.Combobox):
+    """
+    fecha de windows amm calendario
+    """
+
+    def __init__(self, master, **kwargs):
+        super().__init__(master, state="readonly", **kwargs)
+        self._popup = None
+        self._cuerpo = None
+        self._cerrado_en = 0.0
+        self._fecha = date.today()
+        self._mes_visible = date(self._fecha.year, self._fecha.month, 1)
+        self.set(fecha_en_espanol(self._fecha))
+        self.bind("<Button-1>", self._alternar_calendario)
+
+
+    def obtener_fecha(self):
+        """Devuelve la fecha elegida como datetime.date."""
+        return self._fecha
+
+    def establecer_fecha(self, fecha):
+        self._fecha = fecha
+        self.set(fecha_en_espanol(fecha))
+
+
+    def _alternar_calendario(self, event=None):
+
+        if time.time() - self._cerrado_en < 0.25:
+            return "break"
+        if self._popup is not None and self._popup.winfo_exists():
+            self._cerrar()
+        else:
+            self._abrir()
+        return "break"  
+
+    def _abrir(self):
+        self._mes_visible = date(self._fecha.year, self._fecha.month, 1)
+        popup = tk.Toplevel(self)
+        popup.overrideredirect(True)
+        popup.configure(bg=COLOR_ACCENT)
+        self._popup = popup
+        self._cuerpo = tk.Frame(popup, bg=COLOR_WHITE)
+        self._cuerpo.pack(padx=1, pady=1)
+        self._dibujar()
+
+        popup.update_idletasks()
+        x = self.winfo_rootx()
+        y = self.winfo_rooty() + self.winfo_height()
+        popup.geometry(f"+{x}+{y}")
+        popup.bind("<Escape>", lambda e: self._cerrar())
+        popup.bind("<FocusOut>", lambda e: self.after(80, self._cerrar_si_sin_foco))
+        popup.focus_force()
+
+    def _cerrar(self):
+        if self._popup is not None:
+            try:
+                self._popup.destroy()
+            except tk.TclError:
+                pass
+        self._popup = None
+        self._cuerpo = None
+        self._cerrado_en = time.time()
+
+    def _cerrar_si_sin_foco(self):
+        if self._popup is None:
+            return
+        try:
+            foco = self.focus_get()
+        except KeyError:
+            foco = None
+        if foco is None or not str(foco).startswith(str(self._popup)):
+            self._cerrar()
+
+    def _cambiar_mes(self, delta):
+        m = self._mes_visible.month - 1 + delta
+        self._mes_visible = date(self._mes_visible.year + m // 12, m % 12 + 1, 1)
+        self._dibujar()
+
+    def _elegir(self, fecha):
+        self.establecer_fecha(fecha)
+        self._cerrar()
+
+    def _dibujar(self):
+        for hijo in self._cuerpo.winfo_children():
+            hijo.destroy()
+
+        hoy = date.today()
+        fuente = ("Segoe UI", 10)
+
+        cab = tk.Frame(self._cuerpo, bg=COLOR_WHITE)
+        cab.pack(fill="x", padx=6, pady=(6, 2))
+        flecha_izq = tk.Label(cab, text="◄", font=fuente, fg=COLOR_INK, bg=COLOR_WHITE, cursor="hand2")
+        flecha_izq.pack(side="left", padx=4)
+        flecha_izq.bind("<Button-1>", lambda e: self._cambiar_mes(-1))
+        flecha_der = tk.Label(cab, text="►", font=fuente, fg=COLOR_INK, bg=COLOR_WHITE, cursor="hand2")
+        flecha_der.pack(side="right", padx=4)
+        flecha_der.bind("<Button-1>", lambda e: self._cambiar_mes(1))
+        tk.Label(
+            cab,
+            text=f"{MESES_ES[self._mes_visible.month - 1]} de {self._mes_visible.year}",
+            font=fuente, fg=COLOR_ACCENT, bg=COLOR_WHITE,
+        ).pack(expand=True)
+
+
+
+        rejilla = tk.Frame(self._cuerpo, bg=COLOR_WHITE)
+        rejilla.pack(padx=6, pady=2)
+        for col, nombre in enumerate(DIAS_CORTOS_ES):
+            tk.Label(
+                rejilla, text=nombre, width=4, font=("Segoe UI", 10, "bold"),
+                fg=COLOR_INK, bg=COLOR_WHITE,
+            ).grid(row=0, column=col)
+
+        semanas = calendar.Calendar(firstweekday=6).monthdatescalendar(
+            self._mes_visible.year, self._mes_visible.month
+        )
+        for fila, semana in enumerate(semanas, start=1):
+            for col, dia in enumerate(semana):
+                del_mes = dia.month == self._mes_visible.month
+                etiqueta = tk.Label(
+                    rejilla, text=str(dia.day), width=4, font=fuente,
+                    fg=COLOR_INK if del_mes else "#AAAAAA",
+                    bg=COLOR_ACCENT_BG if dia == self._fecha else COLOR_WHITE,
+                    cursor="hand2",
+                    highlightthickness=1,
+                    highlightbackground=COLOR_ACCENT if dia == hoy else (
+                        COLOR_ACCENT_BG if dia == self._fecha else COLOR_WHITE
+                    ),
+                )
+                etiqueta.grid(row=fila, column=col, padx=1, pady=1)
+                etiqueta.bind("<Button-1>", lambda e, d=dia: self._elegir(d))
+
+
+        pie = tk.Label(
+            self._cuerpo, text=f"Hoy: {hoy.strftime('%d/%m/%Y')}", font=fuente,
+            fg=COLOR_INK, bg=COLOR_WHITE, cursor="hand2",
+        )
+        pie.pack(pady=(2, 6))
+        pie.bind("<Button-1>", lambda e: self._elegir(hoy))
+
 
 
 class VentanaAgregarPedido(tk.Toplevel):
@@ -80,9 +203,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         self.title("Agregar Pedido — MACS COL")
 
         # ----------------------------------------------------------------
-        # Tamaño de ventana: se redujo de 1200x950 a 1200x860 y se centra
-        # en la pantalla, para que quepa cómodamente en pantallas de
-        # portátil (1366x768) sin quedar cortada por la barra de tareas.
+        # Tamaño de ventana
         # ----------------------------------------------------------------
         ancho_pantalla = self.winfo_screenwidth()
         alto_pantalla = self.winfo_screenheight()
@@ -96,11 +217,10 @@ class VentanaAgregarPedido(tk.Toplevel):
         self._escala_tk_base = float(self.tk.call("tk", "scaling"))
         self.configure(bg=COLOR_CHROME)
 
-        # Número de planilla (se incrementa cada vez que se guarda un pedido)
+
         self.numero_planilla = 1
 
-        # ID incremental para cada pedido guardado en la tabla de la izquierda
-        # Items que se van agregando con "Listar" antes de guardar el pedido
+
         self.items_pedido_actual = []
         self.peso_total_actual = 0
         self.clientes = {}
@@ -120,17 +240,10 @@ class VentanaAgregarPedido(tk.Toplevel):
         self.cargar_pedidos()
 
     # ------------------------------------------------------------------
-    # ESTILO "TIPO EXCEL" PARA LAS TABLAS (Treeview)
+    # TABLAS
     # ------------------------------------------------------------------
     def _configurar_estilo_tablas(self):
-        """
-        ttk.Treeview no dibuja líneas de cuadrícula verticales/horizontales
-        de forma nativa como una hoja de Excel, así que nos acercamos lo
-        más posible usando:
-          - tema "clam" (permite personalizar bordes y colores)
-          - bordes delgados en encabezados y celdas
-          - franjas de color alternas en las filas (como Excel)
-        """
+
         estilo = ttk.Style(self)
         estilo.theme_use("clam")
 
@@ -150,8 +263,7 @@ class VentanaAgregarPedido(tk.Toplevel):
             relief="solid",
             borderwidth=1,
         )
-        # Quita el resaltado azul feo de selección y lo deja gris claro,
-        # más parecido a Excel.
+
         estilo.map(
             "Excel.Treeview",
             background=[("selected", "#CCE8FF")],
@@ -163,12 +275,19 @@ class VentanaAgregarPedido(tk.Toplevel):
         tabla.tag_configure("par", background="#F5F5F5")
         tabla.tag_configure("impar", background="white")
 
-    # ------------------------------------------------------------------
-    # BUSCADOR EN LOS COMBOBOX (Cliente, Producto, Vehiculo, Destino,
-    # Conductor). Convierte el Combobox de "solo selección" a uno donde
-    # se puede escribir texto y la lista desplegable se filtra en vivo
-    # mostrando solo las coincidencias.
-    # ------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
     def _configurar_busqueda_combobox(self, combo, obtener_valores):
         """
         obtener_valores: función sin argumentos que retorna la lista
@@ -179,7 +298,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         combo.configure(state="normal")
 
         def filtrar(event=None):
-            # Las teclas de navegación/selección no deben re-filtrar
+            
             if event is not None and event.keysym in (
                 "Up", "Down", "Left", "Right", "Return", "Escape", "Tab"
             ):
@@ -192,7 +311,6 @@ class VentanaAgregarPedido(tk.Toplevel):
             ]
             combo["values"] = coincidencias
 
-            # Despliega automáticamente la lista filtrada mientras se escribe
             if coincidencias:
                 try:
                     combo.event_generate("<Down>")
@@ -200,9 +318,7 @@ class VentanaAgregarPedido(tk.Toplevel):
                     pass
 
         def restaurar_lista_completa(event=None):
-            # Al seleccionar un valor o al volver a hacer clic en el
-            # campo, se restaura la lista completa (por si se quiere
-            # buscar algo distinto).
+
             combo["values"] = obtener_valores()
 
         combo.bind("<KeyRelease>", filtrar)
@@ -289,7 +405,7 @@ class VentanaAgregarPedido(tk.Toplevel):
                 continue
 
     # ------------------------------------------------------------------
-    # PANEL IZQUIERDO: Cliente / Producto / Cantidad (dentro de un recuadro)
+    # PANEL IZQUIERDO: Cliente / Producto / Cantidad
     # ------------------------------------------------------------------
     def _crear_panel_izquierdo(self):
         self.frame_izquierdo = tk.Frame(
@@ -342,7 +458,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         self.frame_derecho.place(x=610, y=80, width=560, height=190)
 
         frame = tk.Frame(self.frame_derecho, bg=COLOR_WHITE)
-        frame.place(x=25, y=15, width=510, height=200)
+        frame.place(x=25, y=6, width=510, height=178)
 
         etiquetas = ["Vehiculo", "Origen", "Destino", "Fecha", "Conductor"]
         self.combos_derecha = {}
@@ -350,25 +466,28 @@ class VentanaAgregarPedido(tk.Toplevel):
         for i, texto in enumerate(etiquetas):
             tk.Label(
                 frame, text=texto, font=FUENTE_ETIQUETA, fg=COLOR_INK, bg=COLOR_WHITE
-            ).grid(row=i, column=0, sticky="w", pady=9, padx=(0, 15))
+            ).grid(row=i, column=0, sticky="w", pady=3, padx=(0, 15))
+
+
+
+
+
 
             if texto == "Fecha":
-                # Campo de solo lectura con la fecha de hoy en español.
-                combo = ttk.Combobox(
-                    frame,
-                    state="readonly",
-                    width=30,
-                    values=[fecha_actual_en_espanol()],
-                )
-                combo.set(fecha_actual_en_espanol())
+
+                # el calendario.
+                combo = SelectorFecha(frame, width=30)
             else:
                 combo = ttk.Combobox(frame, state="readonly", width=30)
 
-            combo.grid(row=i, column=1, sticky="w", pady=9)
+            combo.grid(row=i, column=1, sticky="w", pady=3)
             self.combos_derecha[texto] = combo
 
         self._configurar_busqueda_combobox(
             self.combos_derecha["Vehiculo"], lambda: list(self.vehiculos)
+        )
+        self._configurar_busqueda_combobox(
+            self.combos_derecha["Origen"], lambda: list(self.destinos)
         )
         self._configurar_busqueda_combobox(
             self.combos_derecha["Destino"], lambda: list(self.destinos)
@@ -411,6 +530,7 @@ class VentanaAgregarPedido(tk.Toplevel):
             self.combo_cliente["values"] = list(self.clientes)
             self.combo_producto["values"] = list(self.productos)
             self.combos_derecha["Vehiculo"]["values"] = list(self.vehiculos)
+            self.combos_derecha["Origen"]["values"] = list(self.destinos)
             self.combos_derecha["Destino"]["values"] = list(self.destinos)
             self.combos_derecha["Conductor"]["values"] = list(self.conductores)
 
@@ -418,39 +538,25 @@ class VentanaAgregarPedido(tk.Toplevel):
             messagebox.showerror("Error", f"No se pudieron cargar los datos del pedido:\n\n{error}")
 
     def cargar_pedidos(self):
-        """Carga el historial de pedidos y sus detalles desde SQLite."""
-        for fila in self.tabla_pedidos.get_children():
-            self.tabla_pedidos.delete(fila)
+        """
+        Actualiza el numero de la planilla actual (siguiente Id libre en la BD).
+        Las tablas del formulario ya NO se llenan con planillas guardadas:
+        solo muestran la planilla que se esta armando.
 
+        
+        """
         try:
-            conexion = obtener_conexion()
-            cursor = conexion.cursor()
-            cursor.execute("""
-                SELECT pedidos.id, clientes.nombre, productos.nombre,
-                       detalle_pedido.cantidad, detalle_pedido.peso_total,
-                       pedidos.numero_ruta
-                FROM pedidos
-                JOIN clientes ON clientes.id = pedidos.cliente_id
-                JOIN detalle_pedido ON detalle_pedido.pedido_id = pedidos.id
-                JOIN productos ON productos.id = detalle_pedido.producto_id
-                ORDER BY pedidos.id, detalle_pedido.id
-            """)
-            pedidos = cursor.fetchall()
-            proximo_id = cursor.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM pedidos").fetchone()[0]
-            conexion.close()
-
-            for id_pedido, cliente, producto, cantidad, peso, ruta in pedidos:
-                tag = "par" if len(self.tabla_pedidos.get_children()) % 2 == 0 else "impar"
-                self.tabla_pedidos.insert(
-                    "", "end", values=(id_pedido, cliente, producto, cantidad, peso, ruta or ""), tags=(tag,)
-                )
+            with closing(obtener_conexion()) as conexion:
+                proximo_id = conexion.execute(
+                    "SELECT COALESCE(MAX(id), 0) + 1 FROM pedidos"
+                ).fetchone()[0]
 
             self.numero_planilla = proximo_id
             self.siguiente_id_pedido = proximo_id
             self.label_planilla.config(text=f"Planilla No {self.numero_planilla}")
 
         except Exception as error:
-            messagebox.showerror("Error", f"No se pudieron cargar los pedidos:\n\n{error}")
+            messagebox.showerror("Error", f"No se pudo leer el numero de planilla:\n\n{error}")
 
     def _crear_fila_listar(self):
         frame = tk.Frame(self, bg=COLOR_FONDO)
@@ -486,15 +592,13 @@ class VentanaAgregarPedido(tk.Toplevel):
         self.texto_observaciones = tk.Text(frame, width=36, height=3)
         self.texto_observaciones.place(x=520, y=50)
 
-    # ------------------------------------------------------------------
-    # TABLAS (estilo Excel)
-    # ------------------------------------------------------------------
+    
     def _crear_tablas(self):
         frame = tk.Frame(self, bg=COLOR_FONDO)
         frame.place(x=30, y=390, width=1150, height=180)
 
-        # ---------- Tabla izquierda: pedidos guardados ----------
-        columnas_1 = ("Id", "Cliente", "Producto", "Cantidad", "Peso Total", "Ruta")
+      # tabla
+        columnas_1 = ("Cliente", "Producto", "Cantidad", "Peso (Kg)")
         self.tabla_pedidos = ttk.Treeview(
             frame,
             columns=columnas_1,
@@ -502,7 +606,7 @@ class VentanaAgregarPedido(tk.Toplevel):
             height=9,
             style="Excel.Treeview",
         )
-        anchos_1 = (45, 130, 145, 75, 90, 90)
+        anchos_1 = (200, 200, 100, 100)
         for col, ancho in zip(columnas_1, anchos_1):
             self.tabla_pedidos.heading(col, text=col)
             self.tabla_pedidos.column(col, width=ancho, anchor="center")
@@ -510,7 +614,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         self.tabla_pedidos.place(x=0, y=0, width=630, height=170)
         self._aplicar_filas_alternas(self.tabla_pedidos)
 
-        # ---------- Tabla derecha: items del pedido actual ----------
+        # ---------- Tabla derecha ----------
         columnas_2 = ("Producto", "Cantidad")
         self.tabla_items = ttk.Treeview(
             frame,
@@ -528,7 +632,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         self._aplicar_filas_alternas(self.tabla_items)
 
     # ------------------------------------------------------------------
-    # PIE DEL FORMULARIO: Eliminar / Actualizar / Guardar
+    # BOTONES
     # ------------------------------------------------------------------
     def _crear_pie_formulario(self):
         frame = tk.Frame(self, bg=COLOR_FONDO)
@@ -545,7 +649,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         ).place(x=0, y=5)
 
         tk.Label(
-            frame, text="ID pedido a eliminar", font=FUENTE_ETIQUETA, bg=COLOR_FONDO
+            frame, text="ID pedido", font=FUENTE_ETIQUETA, bg=COLOR_FONDO
         ).place(x=145, y=5)
         self.entrada_id_eliminar = tk.Entry(frame, width=25)
         self.entrada_id_eliminar.place(x=145, y=32)
@@ -589,14 +693,32 @@ class VentanaAgregarPedido(tk.Toplevel):
     # ------------------------------------------------------------------
     # ACCIONES
     # ------------------------------------------------------------------
+    def _refrescar_totales_producto(self):
+        """Rellena la tabla derecha sumando la cantidad de cada producto repetido."""
+        totales = {}
+        for item in self.items_pedido_actual:
+            clave = item["producto_id"]
+            if clave not in totales:
+                totales[clave] = [f"{item['producto_id']} - {item['producto']}", 0]
+            totales[clave][1] += item["cantidad"]
+
+        for fila in self.tabla_items.get_children():
+            self.tabla_items.delete(fila)
+        for i, (nombre, cantidad) in enumerate(totales.values()):
+            tag = "par" if i % 2 == 0 else "impar"
+            self.tabla_items.insert("", "end", values=(nombre, cantidad), tags=(tag,))
+
     def listar_item(self):
-        """
-        Agrega el Producto + Cantidad actuales a la tabla derecha
-        (items del pedido que se está armando) y suma su peso al
-        total mostrado junto al botón "Listar".
-        """
+
+
         producto = self.combo_producto.get()
         cantidad_texto = self.entrada_cantidad.get().strip()
+
+        cliente = self.combo_cliente.get()
+
+        if not cliente:
+            messagebox.showwarning("Pedido", "Selecciona un cliente.")
+            return
 
         if not producto:
             messagebox.showwarning("Pedido", "Selecciona un producto.")
@@ -608,7 +730,7 @@ class VentanaAgregarPedido(tk.Toplevel):
 
         cantidad = int(cantidad_texto)
         producto_id, nombre_producto, peso_unitario = self.productos[producto]
-        peso_item = cantidad * peso_unitario
+        peso_item = int(round(cantidad * peso_unitario))  # sin decimales
 
         # Se agrega a la lista en memoria del pedido actual
         self.items_pedido_actual.append(
@@ -616,23 +738,24 @@ class VentanaAgregarPedido(tk.Toplevel):
              "cantidad": cantidad, "peso": peso_item}
         )
 
-        tag = "par" if len(self.tabla_items.get_children()) % 2 == 0 else "impar"
-        self.tabla_items.insert("", "end", values=(producto, cantidad), tags=(tag,))
+        # Tabla izquierda: una fila por cada pedido (cliente + producto)
+        tag = "par" if len(self.tabla_pedidos.get_children()) % 2 == 0 else "impar"
+        self.tabla_pedidos.insert(
+            "", "end", values=(cliente, producto, cantidad, peso_item), tags=(tag,)
+        )
+        # Tabla derecha: total sumado por producto
+        self._refrescar_totales_producto()
 
         self.peso_total_actual += peso_item
-        self.label_peso.config(text=f"Peso {self.peso_total_actual}")
+        self.label_peso.config(text=f"Peso {int(self.peso_total_actual)}")
 
         # Limpia los campos para el siguiente producto
         self.combo_producto.set("")
         self.entrada_cantidad.delete(0, "end")
 
     def guardar_pedido(self):
-        """
-        Guarda el pedido actual: pasa cada item de la tabla derecha
-        (items_pedido_actual) a la tabla izquierda (historial de
-        pedidos), todos con el mismo Id de pedido, y luego limpia
-        el formulario para uno nuevo.
-        """
+
+    
         cliente = self.combo_cliente.get()
 
         if not cliente:
@@ -647,11 +770,11 @@ class VentanaAgregarPedido(tk.Toplevel):
 
         cliente_id = self.clientes[cliente]
         vehiculo = self.combos_derecha["Vehiculo"].get()
+        origen = self.combos_derecha["Origen"].get()
         destino = self.combos_derecha["Destino"].get()
         conductor = self.combos_derecha["Conductor"].get()
         observaciones = self.texto_observaciones.get("1.0", "end").strip()
-        numero_ruta = self.entrada_numero_ruta.get().strip() or None
-        fecha = date.today().isoformat()
+        fecha = self.combos_derecha["Fecha"].obtener_fecha().isoformat()
 
         try:
             with closing(obtener_conexion()) as conexion:
@@ -666,7 +789,7 @@ class VentanaAgregarPedido(tk.Toplevel):
                     self.vehiculos.get(vehiculo),
                     self.destinos.get(destino),
                     self.conductores.get(conductor),
-                    numero_ruta,
+                    None,  # la ruta se asigna despues con "Actualizar"
                     observaciones,
                     fecha,
                 ))
@@ -698,17 +821,19 @@ class VentanaAgregarPedido(tk.Toplevel):
                     "cliente": cliente.split(" - ", 1)[-1],
                     "producto": item["producto"],
                     "cantidad": item["cantidad"],
-                    "no_envio": numero_ruta or "",
+                    "no_envio": "",
                 }
                 for item in self.items_pedido_actual
             ]
             encabezado_planilla = {
                 "vehiculo": vehiculo,
+                "origen": origen.split(" - ", 1)[-1] if origen else "",
                 "destino": destino.split(" - ", 1)[-1] if destino else "",
                 "conductor": conductor.split(" - ", 1)[-1] if conductor else "",
                 "fecha": fecha,
-                "numero_ruta": numero_ruta or "",
+                "numero_ruta": "",
                 "numero_planilla": id_pedido,
+                "observaciones": observaciones,
             }
             plantilla = os.path.join(carpeta_proyecto, "17092026EYZ9456262F PASTO.docx")
             archivo_planilla = os.path.join(carpeta_planillas, f"planilla_{id_pedido}.docx")
@@ -726,8 +851,9 @@ class VentanaAgregarPedido(tk.Toplevel):
         self.peso_total_actual = 0
         self.label_peso.config(text=f"Peso {self.peso_total_actual}")
 
-        for fila in self.tabla_items.get_children():
-            self.tabla_items.delete(fila)
+        for tabla in (self.tabla_items, self.tabla_pedidos):
+            for fila in tabla.get_children():
+                tabla.delete(fila)
 
         self.combo_cliente.set("")
         self.texto_observaciones.delete("1.0", "end")
@@ -768,14 +894,8 @@ class VentanaAgregarPedido(tk.Toplevel):
         self.entrada_id_eliminar.delete(0, "end")
 
     def generar_planilla_ruta(self):
-        """
-        Genera UNA sola Planilla de Despacho con TODOS los pedidos (de
-        distintos clientes) que compartan el numero de ruta escrito en
-        'Número de ruta'. A diferencia de la planilla que se crea sola al
-        Guardar (que solo lleva el pedido que se acaba de guardar), esta
-        junta toda la ruta en una sola hoja -- una fila por cliente, tal
-        como el formato fisico.
-        """
+
+
         numero_ruta = self.entrada_numero_ruta.get().strip()
         if not numero_ruta:
             messagebox.showwarning(
@@ -830,16 +950,15 @@ class VentanaAgregarPedido(tk.Toplevel):
             pass  # si no se puede abrir solo, el archivo ya quedo guardado
 
     def actualizar(self):
-        seleccion = self.tabla_pedidos.selection()
+        id_pedido = self.entrada_id_eliminar.get().strip()
         numero_ruta = self.entrada_numero_ruta.get().strip()
-        if not seleccion:
-            messagebox.showwarning("Pedido", "Selecciona un pedido en la tabla para actualizar su ruta.")
+        if not id_pedido:
+            messagebox.showwarning("Pedido", "Escribe el ID del pedido al que quieres asignar la ruta.")
             return
         if not numero_ruta:
             messagebox.showwarning("Pedido", "Escribe el número de ruta.")
             return
 
-        id_pedido = self.tabla_pedidos.item(seleccion[0], "values")[0]
         try:
             with closing(obtener_conexion()) as conexion:
                 cursor = conexion.cursor()
@@ -852,8 +971,11 @@ class VentanaAgregarPedido(tk.Toplevel):
             return
         self.cargar_pedidos()
         self.entrada_numero_ruta.delete(0, "end")
+        self.entrada_id_eliminar.delete(0, "end")
         if actualizado:
             messagebox.showinfo("Pedido", f"Ruta del pedido {id_pedido} actualizada.")
+        else:
+            messagebox.showwarning("Pedido", f"No se encontró ningún pedido con el Id '{id_pedido}'.")
 
 
 if __name__ == "__main__":

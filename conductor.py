@@ -3,14 +3,6 @@
  CONDUCTORES - MACS COL
 ================================================================================
 
-Este ma³dulo gestiona los conductores de MACS COL, con el mismo diseño
-"software de escritorio" (mockup: macscol_app_menu_escritorio.html) que usan
-Principal y las demás ventanas de la aplicación. Los colores, fuentes y
-helpers viven en estilo.py.
-
-Los datos se almacenan de forma permanente en SQLite mediante:
-    almacenamiento.py
-
 La información se guarda en:
     datos/macscol.db
 
@@ -72,7 +64,7 @@ class VentanaConductor(tk.Toplevel):
 
         # ---- Tarjeta con la tabla ----
         tarjeta = tk.Frame(cuerpo, bg=WHITE, highlightbackground=CHROME_LINE,
-                            highlightthickness=1)
+                            highlightthickness=2)
         tarjeta.pack(fill="both", expand=True)
 
         frame_tabla = tk.Frame(tarjeta, bg=WHITE)
