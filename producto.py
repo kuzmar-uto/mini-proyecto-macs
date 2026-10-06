@@ -1,4 +1,4 @@
-﻿"""
+"""
 ================================================================================
  PRODUCTOS - MACS COL
 ================================================================================
@@ -15,7 +15,7 @@ Funciones principales:
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from almacenamiento import obtener_conexion
+from almacenamiento import obtener_conexion, registrar_actividad
 from estilo import (
     CHROME, CHROME_LINE, NAVY, NAVY_DEEP, ACCENT, ACCENT_BG, INK, GRAY, WHITE,
     ajustar_geometria_ventana,
@@ -254,6 +254,7 @@ class VentanaProducto(tk.Toplevel):
             conexion.commit()
             conexion.close()
 
+            registrar_actividad(f"Producto agregado: {nombre}")
             self.cargar_productos()
             ventana.destroy()
 
@@ -362,6 +363,10 @@ class VentanaProducto(tk.Toplevel):
             conexion = obtener_conexion()
             cursor = conexion.cursor()
 
+            fila = cursor.execute(
+                "SELECT nombre FROM productos WHERE id = ?", (id_buscado,)
+            ).fetchone()
+            nombre = fila[0] if fila else id_buscado
             cursor.execute("DELETE FROM productos WHERE id = ?", (id_buscado,))
             filas_eliminadas = cursor.rowcount
 
@@ -375,6 +380,7 @@ class VentanaProducto(tk.Toplevel):
                 )
                 return
 
+            registrar_actividad(f"Producto eliminado: {nombre}")
             self.cargar_productos()
             ventana.destroy()
 
@@ -401,6 +407,10 @@ class VentanaProducto(tk.Toplevel):
             conexion = obtener_conexion()
             cursor = conexion.cursor()
 
+            fila = cursor.execute(
+                "SELECT nombre FROM productos WHERE id = ?", (id_producto,)
+            ).fetchone()
+            nombre = fila[0] if fila else id_producto
             cursor.execute("DELETE FROM productos WHERE id = ?", (id_producto,))
             filas_eliminadas = cursor.rowcount
 
@@ -414,6 +424,7 @@ class VentanaProducto(tk.Toplevel):
                 )
                 return
 
+            registrar_actividad(f"Producto eliminado: {nombre}")
             self.cargar_productos()
 
             messagebox.showinfo(

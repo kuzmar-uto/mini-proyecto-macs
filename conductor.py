@@ -1,4 +1,4 @@
-﻿"""
+"""
 ================================================================================
  CONDUCTORES - MACS COL
 ================================================================================
@@ -18,7 +18,7 @@ Funciones principales:
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from almacenamiento import obtener_conexion
+from almacenamiento import obtener_conexion, registrar_actividad
 from estilo import (
     CHROME, CHROME_LINE, NAVY, NAVY_DEEP, ACCENT, ACCENT_BG, INK, GRAY, WHITE,
     ajustar_geometria_ventana,
@@ -228,6 +228,7 @@ class VentanaConductor(tk.Toplevel):
             conexion.commit()
             conexion.close()
 
+            registrar_actividad(f"Conductor agregado: {nombre}")
             self.cargar_conductores()
             ventana.destroy()
 
@@ -336,6 +337,10 @@ class VentanaConductor(tk.Toplevel):
             conexion = obtener_conexion()
             cursor = conexion.cursor()
 
+            fila = cursor.execute(
+                "SELECT nombre FROM conductores WHERE cedula = ?", (cedula_buscada,)
+            ).fetchone()
+            nombre = fila[0] if fila else cedula_buscada
             cursor.execute("DELETE FROM conductores WHERE cedula = ?", (cedula_buscada,))
             filas_eliminadas = cursor.rowcount
 
@@ -349,6 +354,7 @@ class VentanaConductor(tk.Toplevel):
                 )
                 return
 
+            registrar_actividad(f"Conductor eliminado: {nombre}")
             self.cargar_conductores()
             ventana.destroy()
 
@@ -375,6 +381,10 @@ class VentanaConductor(tk.Toplevel):
             conexion = obtener_conexion()
             cursor = conexion.cursor()
 
+            fila = cursor.execute(
+                "SELECT nombre FROM conductores WHERE cedula = ?", (cedula,)
+            ).fetchone()
+            nombre = fila[0] if fila else cedula
             cursor.execute("DELETE FROM conductores WHERE cedula = ?", (cedula,))
             filas_eliminadas = cursor.rowcount
 
@@ -388,6 +398,7 @@ class VentanaConductor(tk.Toplevel):
                 )
                 return
 
+            registrar_actividad(f"Conductor eliminado: {nombre}")
             self.cargar_conductores()
 
             messagebox.showinfo(
