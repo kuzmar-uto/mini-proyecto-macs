@@ -2,6 +2,7 @@
 
 import os
 import tkinter as tk
+from datetime import date, datetime
 from tkinter import messagebox
 
 from estilo import (
@@ -15,7 +16,7 @@ from destino import VentanaDestino
 from vehiculo import VentanaVehiculo
 from clientes import VentanaCliente
 from pedido import VentanaAgregarPedido
-from almacenamiento import crear_base_datos
+from almacenamiento import crear_base_datos, obtener_actividad_reciente
 
 RUTA_LOGO = os.path.join(os.path.dirname(__file__), "logo_macscol.png")
 
@@ -65,7 +66,27 @@ MODULOS = {
     "Pedido":    ("Pedidos",     "📋", "Selecciona cliente, productos, vehículo y ruta para despachar.", ""),
 }
 
-ACTIVIDAD_RECIENTE = []
+# Actividad reciente: cuantas lineas mostrar y cada cuanto se revisa la BD (ms).
+LIMITE_ACTIVIDAD = 6
+INTERVALO_ACTIVIDAD_MS = 3000
+
+MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun",
+                "jul", "ago", "sep", "oct", "nov", "dic"]
+
+
+def formatear_hora_actividad(fecha_hora):
+    """'2026-10-05 11:20:33' -> 'Hoy · 11:20', 'Ayer · 16:05' o '03 oct · 09:12'."""
+    try:
+        momento = datetime.strptime(fecha_hora, "%Y-%m-%d %H:%M:%S")
+    except (TypeError, ValueError):
+        return str(fecha_hora)
+    hora = momento.strftime("%H:%M")
+    dias = (date.today() - momento.date()).days
+    if dias == 0:
+        return f"Hoy · {hora}"
+    if dias == 1:
+        return f"Ayer · {hora}"
+    return f"{momento.day:02d} {MESES_CORTOS[momento.month - 1]} · {hora}"
 
 
 class InterfazPrincipal(tk.Tk):
@@ -81,6 +102,7 @@ class InterfazPrincipal(tk.Tk):
         self.items_nav = {}
         self.item_activo = "Inicio"
         self._widgets_tile = {}
+        self._actividad_mostrada = None   # lo que se ve ahora en el panel de actividad
 
         self._crear_menu()
         self._crear_toolbar()
@@ -93,6 +115,10 @@ class InterfazPrincipal(tk.Tk):
 
         self._crear_statusbar()
         self.bind("<Configure>", self._adaptar_distribucion)
+
+        # Revisa la actividad cada pocos segundos para que el panel se
+        # actualice solo cuando se guarda/elimina algo en otra ventana.
+        self.after(INTERVALO_ACTIVIDAD_MS, self._refrescar_periodico)
 
     # ------------------------------------------------------------------
     # Menú superior
@@ -109,7 +135,7 @@ class InterfazPrincipal(tk.Tk):
 
         menu_ver = tk.Menu(menubar, tearoff=0)
         menu_ver.add_command(label="Actualizar", command=self._actualizar)
-        menu_ver.add_command(label="Actividad reciente")
+        menu_ver.add_command(label="Actividad reciente", command=self._ver_actividad)
         menubar.add_cascade(label="Ver", menu=menu_ver)
 
         menu_herramientas = tk.Menu(menubar, tearoff=0)
@@ -354,19 +380,10 @@ class InterfazPrincipal(tk.Tk):
                  font=(FUENTE, 8), fg=APAGADO, bg=SUPERFICIE).pack(anchor="w", padx=18, pady=(0, 10))
         tk.Frame(actividad, bg=LINEA, height=1).pack(fill="x", padx=18)
 
-        if not ACTIVIDAD_RECIENTE:
-            tk.Label(actividad, text="🕑", font=(FUENTE_ICONO, 20), fg=LINEA,
-                     bg=SUPERFICIE).pack(pady=(40, 4))
-            tk.Label(actividad, text="Sin actividad reciente", font=(FUENTE, 9),
-                     fg=APAGADO, bg=SUPERFICIE).pack()
-
-        for hora, descripcion in ACTIVIDAD_RECIENTE:
-            entrada = tk.Frame(actividad, bg=SUPERFICIE)
-            entrada.pack(fill="x", padx=18, pady=7)
-            tk.Label(entrada, text=hora, font=("Consolas", 8), fg=MARCA, bg=SUPERFICIE).pack(anchor="w")
-            tk.Label(entrada, text=descripcion, font=(FUENTE, 9), fg=TINTA, bg=SUPERFICIE,
-                     wraplength=196, justify="left").pack(anchor="w")
-            linea_separadora(entrada, pady=(8, 0))
+        # Aqui se dibujan las entradas (las llena _cargar_actividad)
+        self._lista_actividad = tk.Frame(actividad, bg=SUPERFICIE)
+        self._lista_actividad.pack(fill="both", expand=True)
+        self._cargar_actividad()
 
         self._tiles = tiles
         self._area = area
@@ -532,7 +549,56 @@ class InterfazPrincipal(tk.Tk):
     # funciones que tocas hacer funcionar en el futuro
     # ------------------------------------------------------------------
     def _actualizar(self):
+        self._cargar_actividad()
         messagebox.showinfo("Actualizar", "Datos actualizados.")
+
+    # ------------------------------------------------------------------
+    # Actividad reciente
+    # ------------------------------------------------------------------
+    def _cargar_actividad(self):
+        """Lee la actividad de la BD y redibuja el panel solo si algo cambio."""
+        filas = [
+            (formatear_hora_actividad(fecha_hora), descripcion)
+            for fecha_hora, descripcion in obtener_actividad_reciente(LIMITE_ACTIVIDAD)
+        ]
+        if filas == self._actividad_mostrada:
+            return
+        self._actividad_mostrada = filas
+
+        for hijo in self._lista_actividad.winfo_children():
+            hijo.destroy()
+
+        if not filas:
+            tk.Label(self._lista_actividad, text="🕑", font=(FUENTE_ICONO, 20), fg=LINEA,
+                     bg=SUPERFICIE).pack(pady=(40, 4))
+            tk.Label(self._lista_actividad, text="Sin actividad reciente", font=(FUENTE, 9),
+                     fg=APAGADO, bg=SUPERFICIE).pack()
+            return
+
+        for hora, descripcion in filas:
+            entrada = tk.Frame(self._lista_actividad, bg=SUPERFICIE)
+            entrada.pack(fill="x", padx=18, pady=7)
+            tk.Label(entrada, text=hora, font=("Consolas", 8), fg=MARCA,
+                     bg=SUPERFICIE).pack(anchor="w")
+            tk.Label(entrada, text=descripcion, font=(FUENTE, 9), fg=TINTA, bg=SUPERFICIE,
+                     wraplength=196, justify="left").pack(anchor="w")
+            linea_separadora(entrada, pady=(8, 0))
+
+    def _refrescar_periodico(self):
+        self._cargar_actividad()
+        self.after(INTERVALO_ACTIVIDAD_MS, self._refrescar_periodico)
+
+    def _ver_actividad(self):
+        """Refresca el panel; si esta oculto (ventana angosta) muestra la lista en un aviso."""
+        self._cargar_actividad()
+        if self._actividad.winfo_manager():
+            return
+        if not self._actividad_mostrada:
+            messagebox.showinfo("Actividad reciente", "Sin actividad reciente.")
+            return
+        texto = "\n\n".join(f"{hora}\n{descripcion}"
+                            for hora, descripcion in self._actividad_mostrada)
+        messagebox.showinfo("Actividad reciente", texto)
 
     def _reportes(self):
         messagebox.showinfo("Reportes", "Aquí se mostrará el resumen de despachos por mes.")

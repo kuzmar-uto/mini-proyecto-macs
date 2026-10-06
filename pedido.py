@@ -8,7 +8,7 @@ import sys
 import time
 from contextlib import closing
 
-from almacenamiento import obtener_conexion, obtener_datos_planilla
+from almacenamiento import obtener_conexion, obtener_datos_planilla, registrar_actividad
 
 
 
@@ -807,6 +807,10 @@ class VentanaAgregarPedido(tk.Toplevel):
             messagebox.showerror("Pedido", f"No se pudo guardar el pedido:\n\n{error}")
             return
 
+        registrar_actividad(
+            f"Pedido No {id_pedido} guardado: {cliente.split(' - ', 1)[-1]} "
+            f"({int(self.peso_total_actual)} kg)"
+        )
         self.cargar_pedidos()
 
         planilla_creada = False
@@ -888,6 +892,7 @@ class VentanaAgregarPedido(tk.Toplevel):
                 "Pedido", f"No se encontró ningún pedido con el Id '{id_buscado}'."
             )
         else:
+            registrar_actividad(f"Pedido No {id_buscado} eliminado")
             messagebox.showinfo(
                 "Pedido", f"Se eliminó el pedido No {id_buscado} de la base de datos."
             )
@@ -934,6 +939,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         messagebox.showinfo(
             "Planilla", f"Planilla de la ruta '{numero_ruta}' generada en:\n{archivo_planilla}"
         )
+        registrar_actividad(f"Planilla generada para la ruta {numero_ruta}")
         self._abrir_archivo(archivo_planilla)
 
     @staticmethod
@@ -973,6 +979,7 @@ class VentanaAgregarPedido(tk.Toplevel):
         self.entrada_numero_ruta.delete(0, "end")
         self.entrada_id_eliminar.delete(0, "end")
         if actualizado:
+            registrar_actividad(f"Ruta {numero_ruta} asignada al pedido No {id_pedido}")
             messagebox.showinfo("Pedido", f"Ruta del pedido {id_pedido} actualizada.")
         else:
             messagebox.showwarning("Pedido", f"No se encontró ningún pedido con el Id '{id_pedido}'.")

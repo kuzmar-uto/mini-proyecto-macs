@@ -1,4 +1,4 @@
-﻿"""
+"""
  DESTINOS - MACS COL
 ================================================================================
 
@@ -17,7 +17,7 @@ Funciones principales:
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from almacenamiento import obtener_conexion
+from almacenamiento import obtener_conexion, registrar_actividad
 from estilo import (
     CHROME, CHROME_LINE, NAVY, NAVY_DEEP, ACCENT, ACCENT_BG, INK, GRAY, WHITE,
     ajustar_geometria_ventana,
@@ -171,6 +171,7 @@ class VentanaDestino(tk.Toplevel):
             conexion.commit()
             conexion.close()
 
+            registrar_actividad(f"Destino agregado: {nombre}")
             self.cargar_destinos()
             ventana.destroy()
             messagebox.showinfo("Destino", "Destino guardado correctamente.")
@@ -246,6 +247,9 @@ class VentanaDestino(tk.Toplevel):
         try:
             conexion = obtener_conexion()
             cursor = conexion.cursor()
+            fila = cursor.execute(
+                "SELECT nombre FROM destinos WHERE id = ?", (id_destino,)
+            ).fetchone()
             cursor.execute("DELETE FROM destinos WHERE id = ?", (id_destino,))
             filas_eliminadas = cursor.rowcount
             conexion.commit()
@@ -254,6 +258,7 @@ class VentanaDestino(tk.Toplevel):
             if filas_eliminadas == 0:
                 return False
 
+            registrar_actividad(f"Destino eliminado: {fila[0] if fila else id_destino}")
             self.cargar_destinos()
             messagebox.showinfo("Destino", "Destino eliminado correctamente.")
             return True

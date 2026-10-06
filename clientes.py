@@ -1,4 +1,4 @@
-﻿"""
+"""
 ================================================================================
  CLIENTES - MACS COL
 ================================================================================
@@ -17,7 +17,7 @@ Funciones principales:
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from almacenamiento import obtener_conexion
+from almacenamiento import obtener_conexion, registrar_actividad
 from estilo import (
     CHROME, CHROME_LINE, NAVY, NAVY_DEEP, ACCENT, ACCENT_BG, INK, GRAY, WHITE,
     ajustar_geometria_ventana,
@@ -202,6 +202,7 @@ class VentanaCliente(tk.Toplevel):
             conexion.commit()
             conexion.close()
 
+            registrar_actividad(f"Cliente agregado: {nombre}")
             self.cargar_clientes()
             ventana.destroy()
 
@@ -260,6 +261,7 @@ class VentanaCliente(tk.Toplevel):
             conexion.commit()
             conexion.close()
 
+            registrar_actividad(f"Cliente eliminado: {nombre_cliente}")
             self.cargar_clientes()
 
             messagebox.showinfo(

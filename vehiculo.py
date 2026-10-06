@@ -1,4 +1,4 @@
-﻿"""
+"""
 ================================================================================
  VEHÍCULOS - MACS COL
 ================================================================================
@@ -7,7 +7,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from almacenamiento import obtener_conexion
+from almacenamiento import obtener_conexion, registrar_actividad
 from estilo import (
     CHROME, CHROME_LINE, NAVY, NAVY_DEEP, ACCENT, ACCENT_BG, INK, GRAY, WHITE,
     ajustar_geometria_ventana,
@@ -168,6 +168,7 @@ class VentanaVehiculo(tk.Toplevel):
             conexion.commit()
             conexion.close()
 
+            registrar_actividad(f"Vehículo agregado: {placa}")
             self.cargar_vehiculos()
             ventana.destroy()
             messagebox.showinfo("Vehículo", "Vehículo guardado correctamente.")
@@ -254,6 +255,7 @@ class VentanaVehiculo(tk.Toplevel):
             if filas_eliminadas == 0:
                 return False
 
+            registrar_actividad(f"Vehículo eliminado: {placa}")
             self.cargar_vehiculos()
             messagebox.showinfo("Vehículo", "Vehículo eliminado correctamente.")
             return True

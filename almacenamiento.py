@@ -8,6 +8,7 @@ aqui es ta la estructura
 
 import os
 import sqlite3
+from datetime import datetime
 
 
 CARPETA_PROYECTO = os.path.dirname(os.path.abspath(__file__))
@@ -142,6 +143,18 @@ def crear_base_datos():
         )
     """)
 
+    # --------------------------------------------------------------------------
+    # TABLA ACTIVIDAD (alimenta el panel "Actividad reciente" de la principal)
+    # --------------------------------------------------------------------------
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS actividad (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha_hora TEXT NOT NULL,
+            descripcion TEXT NOT NULL
+        )
+    """)
+
     # Guardamos los cambios
     conexion.commit()
 
@@ -149,6 +162,51 @@ def crear_base_datos():
     conexion.close()
 
 
+def registrar_actividad(descripcion):
+    """
+    Guarda una linea en el historial de actividad (fecha y hora actuales).
+
+    Nunca lanza errores: si por algo no se puede registrar, la operacion
+    principal (guardar un pedido, eliminar un cliente...) sigue normal.
+    """
+    try:
+        ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conexion = obtener_conexion()
+        # Por si la base de datos es anterior a esta tabla
+        conexion.execute("""
+            CREATE TABLE IF NOT EXISTS actividad (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha_hora TEXT NOT NULL,
+                descripcion TEXT NOT NULL
+            )
+        """)
+        conexion.execute(
+            "INSERT INTO actividad (fecha_hora, descripcion) VALUES (?, ?)",
+            (ahora, descripcion),
+        )
+        conexion.commit()
+        conexion.close()
+    except Exception:
+        pass
+
+
+def obtener_actividad_reciente(limite=8):
+    """
+    Devuelve las ultimas `limite` actividades, de la mas nueva a la mas vieja,
+    como lista de tuplas (fecha_hora, descripcion).
+    """
+    try:
+        conexion = obtener_conexion()
+        filas = conexion.execute("""
+            SELECT fecha_hora, descripcion
+            FROM actividad
+            ORDER BY id DESC
+            LIMIT ?
+        """, (limite,)).fetchall()
+        conexion.close()
+        return filas
+    except sqlite3.Error:
+        return []
 
 
 def obtener_datos_planilla(numero_ruta):
